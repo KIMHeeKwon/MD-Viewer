@@ -10,3 +10,4 @@
 - **현재 진행도**: G3 반응 대기 (방향 선택 전). 코드 미착수.
 - **남은 미결**: 시각 방향 선택, 파일 감시(자동 갱신) 포함 여부.
 - **다음 단계**: 방향 확정 → `DESIGN.md` 토큰 고정 → G4.5 구현 계획 (Electron 스캐폴드, markdown-it 파이프라인, 보안 설정 포함).
+- **저장소**: https://github.com/KIMHeeKwon/MD-Viewer 개설·초기 push 완료 (계정 KIMHeeKwon, 로컬 user.email=hkkim79@gmail.com 설정).
