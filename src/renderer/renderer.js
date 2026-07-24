@@ -253,7 +253,9 @@ function renderTabs() {
     el.className = 'tab';
     el.classList.toggle('active', tab.path === state.active);
     el.setAttribute('role', 'tab');
+    el.title = tab.name; // 말줄임된 긴 이름은 툴팁으로 확인
     const label = document.createElement('span');
+    label.className = 'tab-label';
     label.textContent = tab.name;
     const close = document.createElement('button');
     close.className = 'tab-close';
@@ -267,7 +269,17 @@ function renderTabs() {
     el.addEventListener('click', () => activateTab(tab.path));
     tabbarEl.append(el);
   }
+  const activeEl = tabbarEl.querySelector('.tab.active');
+  if (activeEl) activeEl.scrollIntoView({ inline: 'nearest' });
 }
+
+// 세로 휠로 탭바 가로 스크롤
+tabbarEl.addEventListener('wheel', (e) => {
+  if (e.deltaY) {
+    tabbarEl.scrollLeft += e.deltaY;
+    e.preventDefault();
+  }
+}, { passive: false });
 
 function activateTab(path) {
   state.active = path;
