@@ -256,6 +256,24 @@ body {
   padding: 0 2px;
 }
 
+/* PDF 열람 */
+.pdf-frame { width: 100%; height: 100%; border: none; display: block; }
+
+/* PDF 내보내기 — 활성 문서만 전체 흐름으로 인쇄 */
+@media print {
+  #sidebar, #tabbar, #statusbar { display: none !important; }
+  #app, #main { display: block; height: auto; }
+  #docs { position: static; }
+  .doc-pane { display: none; }
+  .doc-pane.active {
+    display: block;
+    position: static;
+    overflow: visible;
+    height: auto;
+  }
+  .doc-body pre { overflow: hidden; white-space: pre-wrap; word-break: break-all; }
+}
+
 /* 스크롤바 */
 ::-webkit-scrollbar { width: 10px; height: 10px; }
 ::-webkit-scrollbar-thumb { background: var(--sel); border-radius: 5px; }

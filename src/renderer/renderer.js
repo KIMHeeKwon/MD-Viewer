@@ -147,7 +147,10 @@ async function renderInto(pane, source, dir) {
 function buildFileIndex(nodes) {
   for (const n of nodes) {
     if (n.type === 'file') {
-      state.fileIndex.set(n.name.replace(/\.(md|markdown|mdown)$/i, '').toLowerCase(), n.path);
+      // 위키링크 해석 대상은 마크다운만
+      if (/\.(md|markdown|mdown)$/i.test(n.name)) {
+        state.fileIndex.set(n.name.replace(/\.(md|markdown|mdown)$/i, '').toLowerCase(), n.path);
+      }
     } else {
       buildFileIndex(n.children);
     }
@@ -248,28 +251,47 @@ async function openFile(path) {
   const existing = state.tabs.find((t) => t.path === path);
   if (existing) return activateTab(path);
 
-  const res = await window.api.readFile(path);
-  if (res.error) return;
+  const name = path.split('/').pop();
+  const dir = path.slice(0, path.length - name.length - 1);
+  const isPdf = /\.pdf$/i.test(name);
 
   const pane = document.createElement('div');
   pane.className = 'doc-pane';
-  const body = document.createElement('article');
-  body.className = 'doc-body';
-  pane.append(body);
-  docsEl.append(pane);
 
-  const name = path.split('/').pop();
-  const dir = path.slice(0, path.length - name.length - 1);
-  const tab = { path, name, dir, pane, source: res.content };
-  state.tabs.push(tab);
-  await renderInto(pane, res.content, dir);
+  if (isPdf) {
+    // Chromium 내장 PDF 뷰어로 열람
+    const frame = document.createElement('iframe');
+    frame.className = 'pdf-frame';
+    frame.src = `file://${path}`;
+    pane.append(frame);
+    docsEl.append(pane);
+    state.tabs.push({ path, name, dir, pane, source: '', isPdf: true });
+  } else {
+    const res = await window.api.readFile(path);
+    if (res.error) return;
+    const body = document.createElement('article');
+    body.className = 'doc-body';
+    pane.append(body);
+    docsEl.append(pane);
+    const tab = { path, name, dir, pane, source: res.content, isPdf: false };
+    state.tabs.push(tab);
+    await renderInto(pane, res.content, dir);
+  }
   activateTab(path);
   syncWatch();
 }
 
 function syncWatch() {
-  window.api.setWatched(state.tabs.map((t) => t.path));
-  $('#st-watch').textContent = `watching: ${state.tabs.length ? 'on' : 'off'}`;
+  const watched = state.tabs.filter((t) => !t.isPdf).map((t) => t.path);
+  window.api.setWatched(watched);
+  $('#st-watch').textContent = `watching: ${watched.length ? 'on' : 'off'}`;
+}
+
+async function exportPdf() {
+  const tab = state.tabs.find((t) => t.path === state.active);
+  if (!tab || tab.isPdf) return;
+  const suggested = tab.name.replace(/\.(md|markdown|mdown)$/i, '.pdf');
+  await window.api.exportPdf(suggested);
 }
 
 /* ---------- 상태 바 ---------- */
@@ -285,8 +307,12 @@ function updateStatus() {
     ? tab.path.slice(state.root.length + 1)
     : tab.path;
   $('#st-path').textContent = `${state.rootName} · ${rel}`;
-  const words = tab.source.trim().split(/\s+/).filter(Boolean).length;
-  $('#st-words').textContent = `${words.toLocaleString()} words`;
+  if (tab.isPdf) {
+    $('#st-words').textContent = 'PDF';
+  } else {
+    const words = tab.source.trim().split(/\s+/).filter(Boolean).length;
+    $('#st-words').textContent = `${words.toLocaleString()} words`;
+  }
 }
 
 /* ---------- 테마 ---------- */
@@ -296,8 +322,9 @@ async function toggleTheme() {
   document.documentElement.dataset.theme = state.theme;
   $('#btn-theme').textContent = state.theme === 'dark' ? '☾' : '☀';
   mermaid.initialize({ startOnLoad: false, theme: state.theme === 'dark' ? 'dark' : 'default', securityLevel: 'strict' });
-  // Mermaid 테마 반영을 위해 열린 탭 전체 재렌더링 (스크롤 유지)
+  // Mermaid 테마 반영을 위해 열린 마크다운 탭 전체 재렌더링 (스크롤 유지)
   for (const tab of state.tabs) {
+    if (tab.isPdf) continue;
     const scroll = tab.pane.scrollTop;
     await renderInto(tab.pane, tab.source, tab.dir);
     tab.pane.scrollTop = scroll;
@@ -337,3 +364,4 @@ $('#btn-open').addEventListener('click', openFolder);
 $('#btn-theme').addEventListener('click', toggleTheme);
 window.api.onMenu('menu:open-folder', openFolder);
 window.api.onMenu('menu:toggle-theme', toggleTheme);
+window.api.onMenu('menu:export-pdf', exportPdf);

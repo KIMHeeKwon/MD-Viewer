@@ -3,7 +3,7 @@ const path = require('node:path');
 const fs = require('node:fs');
 const chokidar = require('chokidar');
 
-const MD_EXT = /\.(md|markdown|mdown)$/i;
+const FILE_EXT = /\.(md|markdown|mdown|pdf)$/i;
 const isMac = process.platform === 'darwin';
 
 let win = null;
@@ -23,9 +23,9 @@ function readTree(dir, depth = 0) {
     const full = path.join(dir, e.name);
     if (e.isDirectory()) {
       const children = readTree(full, depth + 1);
-      // 마크다운이 하나도 없는 폴더는 트리에서 제외
+      // 문서(md/pdf)가 하나도 없는 폴더는 트리에서 제외
       if (children.length) out.push({ type: 'dir', name: e.name, path: full, children });
-    } else if (MD_EXT.test(e.name)) {
+    } else if (FILE_EXT.test(e.name)) {
       out.push({ type: 'file', name: e.name, path: full });
     }
   }
@@ -62,6 +62,11 @@ function buildMenu() {
           label: '폴더 열기…',
           accelerator: 'CmdOrCtrl+O',
           click: () => win && win.webContents.send('menu:open-folder'),
+        },
+        {
+          label: 'PDF로 내보내기…',
+          accelerator: 'CmdOrCtrl+E',
+          click: () => win && win.webContents.send('menu:export-pdf'),
         },
         { type: 'separator' },
         isMac ? { role: 'close' } : { role: 'quit' },
@@ -102,6 +107,22 @@ ipcMain.handle('folder:open', async () => {
 ipcMain.handle('file:read', async (_e, filePath) => {
   try {
     return { content: fs.readFileSync(filePath, 'utf8') };
+  } catch (err) {
+    return { error: String(err.message || err) };
+  }
+});
+
+ipcMain.handle('pdf:export', async (_e, suggestedName) => {
+  const res = await dialog.showSaveDialog(win, {
+    defaultPath: suggestedName,
+    filters: [{ name: 'PDF', extensions: ['pdf'] }],
+  });
+  if (res.canceled || !res.filePath) return null;
+  try {
+    // 인쇄 미디어 CSS(@media print)가 적용된 상태로 렌더링된다
+    const data = await win.webContents.printToPDF({ printBackground: true, pageSize: 'A4' });
+    fs.writeFileSync(res.filePath, data);
+    return res.filePath;
   } catch (err) {
     return { error: String(err.message || err) };
   }

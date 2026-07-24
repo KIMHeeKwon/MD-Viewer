@@ -1,7 +1,7 @@
 {
   "name": "md-viewer",
   "productName": "MD Viewer",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "단독 실행 마크다운 뷰어 — GFM + KaTeX + Mermaid + Obsidian 확장",
   "author": "KIMHeeKwon <hkkim79@gmail.com>",
   "license": "MIT",
@@ -37,12 +37,12 @@
     "electron": "^43.2.0",
     "electron-builder": "^26.15.3",
     "esbuild": "^0.28.1",
-    "markdown-it": "^14.3.0",
-    "markdown-it-task-lists": "^2.1.1",
-    "markdown-it-footnote": "^4.0.0",
-    "markdown-it-texmath": "^1.0.0",
-    "katex": "^0.18.1",
     "highlight.js": "^11.11.1",
+    "katex": "^0.18.1",
+    "markdown-it": "^14.3.0",
+    "markdown-it-footnote": "^4.0.0",
+    "markdown-it-task-lists": "^2.1.1",
+    "markdown-it-texmath": "^1.0.0",
     "mermaid": "^11.16.0"
   }
 }
