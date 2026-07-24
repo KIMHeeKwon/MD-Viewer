@@ -1,0 +1,44 @@
+{
+  "name": "md-viewer",
+  "productName": "MD Viewer",
+  "version": "0.1.0",
+  "description": "단독 실행 마크다운 뷰어 — GFM + KaTeX + Mermaid + Obsidian 확장",
+  "author": "KIMHeeKwon <hkkim79@gmail.com>",
+  "license": "MIT",
+  "private": true,
+  "main": "src/main.js",
+  "scripts": {
+    "bundle": "esbuild src/renderer/renderer.js --bundle --outdir=renderer-dist --entry-names=renderer --minify --loader:.woff2=file --loader:.woff=file --loader:.ttf=file",
+    "build": "npm run bundle",
+    "start": "npm run bundle && electron .",
+    "dist": "npm run bundle && electron-builder"
+  },
+  "build": {
+    "appId": "kr.hkkim.mdviewer",
+    "files": [
+      "src/**/*",
+      "renderer-dist/**/*"
+    ],
+    "mac": {
+      "category": "public.app-category.productivity"
+    },
+    "win": {
+      "target": "nsis"
+    }
+  },
+  "dependencies": {
+    "chokidar": "^4.0.3"
+  },
+  "devDependencies": {
+    "electron": "^43.2.0",
+    "electron-builder": "^26.15.3",
+    "esbuild": "^0.28.1",
+    "markdown-it": "^14.3.0",
+    "markdown-it-task-lists": "^2.1.1",
+    "markdown-it-footnote": "^4.0.0",
+    "markdown-it-texmath": "^1.0.0",
+    "katex": "^0.18.1",
+    "highlight.js": "^11.11.1",
+    "mermaid": "^11.16.0"
+  }
+}

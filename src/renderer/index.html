@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="ko" data-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="Content-Security-Policy"
+        content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: file:; font-src 'self'">
+  <title>MD Viewer</title>
+  <link rel="stylesheet" href="../../renderer-dist/renderer.css">
+</head>
+<body>
+  <div id="app">
+    <aside id="sidebar">
+      <div id="sidebar-head">
+        <span id="root-name">폴더 없음</span>
+        <button id="btn-open" title="폴더 열기 (⌘O)">폴더 열기</button>
+      </div>
+      <nav id="tree" aria-label="문서 트리"></nav>
+    </aside>
+    <main id="main">
+      <div id="tabbar" role="tablist"></div>
+      <div id="docs">
+        <div id="empty-state">
+          <p class="empty-title">MD Viewer</p>
+          <p class="empty-hint">폴더를 열어 마크다운 문서를 탐색하세요 (⌘O)</p>
+        </div>
+      </div>
+      <footer id="statusbar">
+        <span id="st-path">—</span>
+        <span class="st-right">
+          <span>UTF-8</span>
+          <span>GFM+Obsidian</span>
+          <span id="st-words">0 words</span>
+          <span id="st-watch">watching: off</span>
+          <button id="btn-theme" title="테마 전환 (⌘⇧L)">☾</button>
+        </span>
+      </footer>
+    </main>
+  </div>
+  <script src="../../renderer-dist/renderer.js"></script>
+</body>
+</html>
