@@ -418,7 +418,19 @@ async function exportPdf() {
   const tab = state.tabs.find((t) => t.path === state.active);
   if (!tab || tab.isPdf) return;
   const suggested = tab.name.replace(/\.(md|markdown|mdown)$/i, '.pdf');
+  // Mermaid는 렌더 시점에 색이 박제되므로, 다크 화면이면 라이트로 재렌더링 후 내보내고 복원
+  const wasDark = state.theme === 'dark';
+  const scroll = tab.pane.scrollTop;
+  if (wasDark) {
+    mermaid.initialize({ startOnLoad: false, theme: 'default', securityLevel: 'strict' });
+    await renderInto(tab.pane, tab.source, tab.dir);
+  }
   await window.api.exportPdf(suggested);
+  if (wasDark) {
+    mermaid.initialize({ startOnLoad: false, theme: 'dark', securityLevel: 'strict' });
+    await renderInto(tab.pane, tab.source, tab.dir);
+    tab.pane.scrollTop = scroll;
+  }
 }
 
 /* ---------- 상태 바 ---------- */

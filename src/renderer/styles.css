@@ -322,9 +322,22 @@ body.resizing { cursor: col-resize; user-select: none; }
 :root[data-theme="light"] .pdf-page { box-shadow: 0 3px 14px rgba(30, 40, 70, .22); }
 .pdf-loading { color: var(--dim); padding: 40px; text-align: center; }
 
-/* PDF 내보내기 — 활성 문서만 전체 흐름으로 인쇄 */
+/* PDF 내보내기 — 활성 문서만, 화면 테마와 무관하게 항상 라이트(인쇄) 테마로 강제 */
 @media print {
-  #sidebar, #tabbar, #statusbar { display: none !important; }
+  :root, :root[data-theme="dark"], :root[data-theme="light"] {
+    --bg: #ffffff;
+    --fg: #1f2328;
+    --dim: #59636e;
+    --line: #d1d9e0;
+    --accent: #0a5bd3;
+    --sel: #eef1f5;
+    --soft: #f0f2f5;
+    --code-bg: #f6f8fa;
+    --callout-bg: #f0f4fa;
+  }
+  /* 다크용 신택스 색은 밝은 배경에서 안 보이므로 단색으로 통일 (잉크 친화) */
+  .doc-body pre code, .doc-body pre code span { color: #1f2328 !important; }
+  #sidebar, #resizer, #tabbar, #statusbar { display: none !important; }
   #app, #main { display: block; height: auto; }
   #docs { position: static; }
   .doc-pane { display: none; }
