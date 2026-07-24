@@ -1,0 +1,39 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # Electron 스캐폴드(G4.5) 이전에는 package.json이 없으므로 빌드 단계를 건너뛴다
+      - name: Detect scaffold
+        id: scaffold
+        run: echo "exists=$([ -f package.json ] && echo true || echo false)" >> "$GITHUB_OUTPUT"
+
+      - name: Skip notice
+        if: steps.scaffold.outputs.exists == 'false'
+        run: echo "package.json 없음 — 스캐폴드 전 단계이므로 빌드/테스트를 건너뜁니다."
+
+      - uses: actions/setup-node@v4
+        if: steps.scaffold.outputs.exists == 'true'
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install
+        if: steps.scaffold.outputs.exists == 'true'
+        run: npm ci
+
+      - name: Build
+        if: steps.scaffold.outputs.exists == 'true'
+        run: npm run build --if-present
+
+      - name: Test
+        if: steps.scaffold.outputs.exists == 'true'
+        run: npm test --if-present
