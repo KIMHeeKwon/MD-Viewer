@@ -9,7 +9,17 @@ permissions:
   contents: write
 
 jobs:
+  # 릴리스를 단일 잡에서 먼저 생성 — 매트릭스 러너들의 동시 생성 경합 방지 (FAILURES.md Active Rule 1)
+  create-release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ensure release exists
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh release create "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" --title "$GITHUB_REF_NAME" --notes "" || echo "release already exists"
+
   package:
+    needs: create-release
     strategy:
       matrix:
         os: [macos-latest, windows-latest]
