@@ -10,7 +10,8 @@
 - **v0.2.0 릴리스**: 태그 push → 빌드 성공했으나 releaseType=release로도 경합 재발(TOCTOU, FAILURES.md 개정) → 수동 병합 후 공개. 근본 수정: release.yml에 create-release 선행 잡 추가 (v0.3.0에서 검증).
 - **사용자 피드백 반영 (3차)**: PDF 내보내기가 다크 배경 그대로 출력되는 문제 → 내보내기는 화면 테마와 무관하게 **항상 라이트(인쇄) 테마 강제**로 수정. @media print에서 색 토큰 라이트 오버라이드 + 코드 블록 단색화(잉크 친화), Mermaid는 내보내기 직전 라이트 재렌더링 후 복원.
 - **v0.2.1 릴리스**: 사용자 검증 후 태그 push → **create-release 선행 잡이 경합을 실제로 차단, 단일 릴리스로 자산 집결 확인** (FAILURES.md 사례 종결). https://github.com/KIMHeeKwon/MD-Viewer/releases/tag/v0.2.1
-- **다음 단계**: 백로그 — 검색 기능, Finder .md 연결, Intel Mac(x64) 빌드, macOS 코드 서명.
+- **기능 추가: 문서 내 찾기 (⌘F)**: 보기 메뉴 "찾기…"(⌘F). 활성 마크다운 문서에서 대소문자 무시 매치 하이라이트(노랑) + 현재 매치 강조(액센트) + 개수 표시(n/total), Enter/⇧Enter·▲▼로 이전/다음, Esc 닫기. 선택 텍스트를 초기 쿼리로 시드. 탭 전환·파일 변경·테마 전환 시 하이라이트 자동 재적용(refreshFind). KaTeX/Mermaid(SVG) 내부는 하이라이트 제외(레이아웃 보호). PDF 탭은 canvas라 검색 불가 → 입력 비활성 + 안내. 인쇄 CSS에서 findbar·하이라이트 숨김.
+- **다음 단계**: 백로그 — 프로젝트 전체(파일 간) 검색, Finder .md 연결, Intel Mac(x64) 빌드, macOS 코드 서명, PDF 텍스트 검색.
 
 ## 2026-07-24
 

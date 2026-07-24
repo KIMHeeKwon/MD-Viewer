@@ -79,6 +79,11 @@ function buildMenu() {
       label: '보기',
       submenu: [
         {
+          label: '찾기…',
+          accelerator: 'CmdOrCtrl+F',
+          click: () => win && win.webContents.send('menu:find'),
+        },
+        {
           label: '테마 전환',
           accelerator: 'CmdOrCtrl+Shift+L',
           click: () => win && win.webContents.send('menu:toggle-theme'),

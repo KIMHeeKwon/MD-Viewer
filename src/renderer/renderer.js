@@ -358,6 +358,7 @@ function activateTab(path) {
   renderTabs();
   markActiveInTree();
   updateStatus();
+  refreshFind();
 }
 
 function closeTab(path) {
@@ -468,7 +469,164 @@ async function toggleTheme() {
     await renderInto(tab.pane, tab.source, tab.dir);
     tab.pane.scrollTop = scroll;
   }
+  refreshFind();
 }
+
+/* ---------- 문서 내 찾기 (⌘F) ---------- */
+
+const findbar = $('#findbar');
+const findInput = $('#find-input');
+const findCount = $('#find-count');
+const findState = { matches: [], current: -1 };
+
+function activeTab() {
+  return state.tabs.find((t) => t.path === state.active) || null;
+}
+
+function activeBody() {
+  const tab = activeTab();
+  return tab && !tab.isPdf ? tab.pane.querySelector('.doc-body') : null;
+}
+
+function topInPane(el, pane) {
+  return el.getBoundingClientRect().top - pane.getBoundingClientRect().top + pane.scrollTop;
+}
+
+// 이전 하이라이트를 걷어내고 텍스트 노드를 원상 복구
+function clearHighlights(body) {
+  if (!body) return;
+  const marks = body.querySelectorAll('mark.find-hl');
+  const parents = new Set();
+  for (const m of marks) {
+    const parent = m.parentNode;
+    while (m.firstChild) parent.insertBefore(m.firstChild, m);
+    parent.removeChild(m);
+    parents.add(parent);
+  }
+  for (const p of parents) p.normalize(); // 인접 텍스트 노드 병합 (반복 검색 시 매치 유지)
+}
+
+function highlightInNode(textNode, lowerQuery) {
+  const text = textNode.nodeValue;
+  const low = text.toLowerCase();
+  const frag = document.createDocumentFragment();
+  let from = 0;
+  let idx;
+  while ((idx = low.indexOf(lowerQuery, from)) !== -1) {
+    if (idx > from) frag.appendChild(document.createTextNode(text.slice(from, idx)));
+    const mark = document.createElement('mark');
+    mark.className = 'find-hl';
+    mark.textContent = text.slice(idx, idx + lowerQuery.length);
+    frag.appendChild(mark);
+    from = idx + lowerQuery.length;
+  }
+  if (from < text.length) frag.appendChild(document.createTextNode(text.slice(from)));
+  textNode.parentNode.replaceChild(frag, textNode);
+}
+
+function runFind() {
+  const body = activeBody();
+  clearHighlights(body);
+  findState.matches = [];
+  findState.current = -1;
+
+  const tab = activeTab();
+  if (tab && tab.isPdf) {
+    findInput.disabled = true;
+    findInput.placeholder = 'PDF는 검색을 지원하지 않습니다';
+    findCount.textContent = '—';
+    return;
+  }
+  findInput.disabled = false;
+  findInput.placeholder = '찾기';
+
+  const query = findInput.value;
+  if (!body || !query) { updateFindCount(); return; }
+
+  const lower = query.toLowerCase();
+  const walker = document.createTreeWalker(body, NodeFilter.SHOW_TEXT, {
+    acceptNode(node) {
+      if (!node.nodeValue.trim()) return NodeFilter.FILTER_REJECT;
+      // KaTeX/Mermaid(SVG) 내부는 하이라이트가 레이아웃을 깨므로 제외
+      if (node.parentElement.closest('.katex, .mermaid, svg')) return NodeFilter.FILTER_REJECT;
+      return node.nodeValue.toLowerCase().includes(lower)
+        ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT;
+    },
+  });
+  const targets = [];
+  let n;
+  while ((n = walker.nextNode())) targets.push(n); // DOM 수정 전에 대상 노드를 모두 수집
+  for (const t of targets) highlightInNode(t, lower);
+
+  findState.matches = [...body.querySelectorAll('mark.find-hl')];
+  if (findState.matches.length) {
+    const pane = tab.pane;
+    const paneTop = pane.scrollTop;
+    let start = findState.matches.findIndex((m) => topInPane(m, pane) >= paneTop);
+    if (start < 0) start = 0;
+    setCurrentMatch(start);
+  } else {
+    updateFindCount();
+  }
+}
+
+function setCurrentMatch(i) {
+  const marks = findState.matches;
+  if (!marks.length) { findState.current = -1; updateFindCount(); return; }
+  if (findState.current >= 0 && marks[findState.current]) {
+    marks[findState.current].classList.remove('find-hl-active');
+  }
+  findState.current = (i + marks.length) % marks.length;
+  const cur = marks[findState.current];
+  cur.classList.add('find-hl-active');
+  cur.scrollIntoView({ block: 'center' });
+  updateFindCount();
+}
+
+function updateFindCount() {
+  const total = findState.matches.length;
+  findCount.textContent = total ? `${findState.current + 1}/${total}` : '0/0';
+}
+
+function clearAllHighlights() {
+  for (const t of state.tabs) {
+    if (!t.isPdf) clearHighlights(t.pane.querySelector('.doc-body'));
+  }
+}
+
+// 활성 문서가 다시 그려지거나 탭이 바뀌면 하이라이트를 다시 맞춘다
+function refreshFind() {
+  if (findbar.hidden) return;
+  clearAllHighlights();
+  runFind();
+}
+
+function openFind() {
+  findbar.hidden = false;
+  const tab = activeTab();
+  if (!(tab && tab.isPdf)) {
+    const sel = String(window.getSelection() || '').trim();
+    if (sel && sel.length <= 80) findInput.value = sel;
+  }
+  runFind();
+  if (!findInput.disabled) { findInput.focus(); findInput.select(); }
+}
+
+function closeFind() {
+  clearAllHighlights();
+  findState.matches = [];
+  findState.current = -1;
+  findbar.hidden = true;
+}
+
+findInput.addEventListener('input', runFind);
+findInput.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') { e.preventDefault(); setCurrentMatch(findState.current + (e.shiftKey ? -1 : 1)); }
+  else if (e.key === 'Escape') { e.preventDefault(); closeFind(); }
+});
+$('#find-next').addEventListener('click', () => setCurrentMatch(findState.current + 1));
+$('#find-prev').addEventListener('click', () => setCurrentMatch(findState.current - 1));
+$('#find-close').addEventListener('click', closeFind);
 
 /* ---------- 폴더 열기 / 파일 감시 ---------- */
 
@@ -494,7 +652,7 @@ window.api.onFileChanged(async (path) => {
   const scroll = tab.pane.scrollTop;
   await renderInto(tab.pane, tab.source, tab.dir);
   tab.pane.scrollTop = scroll;
-  if (tab.path === state.active) updateStatus();
+  if (tab.path === state.active) { updateStatus(); refreshFind(); }
 });
 
 /* ---------- 이벤트 결선 ---------- */
@@ -543,3 +701,4 @@ $('#btn-theme').addEventListener('click', toggleTheme);
 window.api.onMenu('menu:open-folder', openFolder);
 window.api.onMenu('menu:toggle-theme', toggleTheme);
 window.api.onMenu('menu:export-pdf', exportPdf);
+window.api.onMenu('menu:find', openFind);

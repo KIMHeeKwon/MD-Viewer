@@ -337,7 +337,9 @@ body.resizing { cursor: col-resize; user-select: none; }
   }
   /* 다크용 신택스 색은 밝은 배경에서 안 보이므로 단색으로 통일 (잉크 친화) */
   .doc-body pre code, .doc-body pre code span { color: #1f2328 !important; }
-  #sidebar, #resizer, #tabbar, #statusbar { display: none !important; }
+  #sidebar, #resizer, #tabbar, #statusbar, #findbar { display: none !important; }
+  /* 검색 하이라이트는 인쇄물에 남기지 않는다 */
+  mark.find-hl, mark.find-hl-active { background: transparent !important; color: inherit !important; }
   #app, #main { display: block; height: auto; }
   #docs { position: static; }
   .doc-pane { display: none; }
@@ -348,6 +350,63 @@ body.resizing { cursor: col-resize; user-select: none; }
     height: auto;
   }
   .doc-body pre { overflow: hidden; white-space: pre-wrap; word-break: break-all; }
+}
+
+/* 문서 내 찾기 바 */
+#findbar {
+  position: absolute;
+  top: 12px;
+  right: 24px;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--side);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 6px 8px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, .35);
+}
+#findbar[hidden] { display: none; }
+#find-input {
+  background: var(--bg);
+  color: var(--fg);
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  padding: 4px 8px;
+  font-size: 13px;
+  width: 180px;
+  outline: none;
+}
+#find-input:focus { border-color: var(--accent); }
+#find-input:disabled { opacity: .6; }
+#find-count {
+  font-family: "JetBrains Mono", "SF Mono", Consolas, monospace;
+  font-size: 12px;
+  color: var(--dim);
+  min-width: 46px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+#findbar button {
+  border: none;
+  background: var(--soft);
+  color: var(--fg);
+  border-radius: 5px;
+  padding: 3px 8px;
+  cursor: pointer;
+  font-size: 12px;
+}
+#findbar button:hover { color: var(--accent); }
+mark.find-hl {
+  background: #ffd45e;
+  color: #1a1b26;
+  border-radius: 2px;
+  scroll-margin: 80px;
+}
+mark.find-hl-active {
+  background: var(--accent);
+  color: #fff;
 }
 
 /* 스크롤바 */

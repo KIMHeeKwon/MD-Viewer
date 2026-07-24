@@ -8,7 +8,7 @@ contextBridge.exposeInMainWorld('api', {
   exportPdf: (suggestedName) => ipcRenderer.invoke('pdf:export', suggestedName),
   onFileChanged: (cb) => ipcRenderer.on('file:changed', (_e, p) => cb(p)),
   onMenu: (channel, cb) => {
-    if (channel === 'menu:open-folder' || channel === 'menu:toggle-theme' || channel === 'menu:export-pdf') {
+    if (channel === 'menu:open-folder' || channel === 'menu:toggle-theme' || channel === 'menu:export-pdf' || channel === 'menu:find') {
       ipcRenderer.on(channel, () => cb());
     }
   },
