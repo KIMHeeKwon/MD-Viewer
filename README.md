@@ -1,5 +1,7 @@
 # MD Viewer
 
+**한국어**: README.md · **English**: [README.en.md](README.en.md)
+
 작성자의 의도대로 마크다운을 렌더링하는 **단독 실행 데스크톱 뷰어**. macOS · Windows 지원, 완전 오프라인 동작.
 
 GitHub Flavored Markdown에 수식(KaTeX) · 다이어그램(Mermaid) · 코드 하이라이트 · Obsidian 확장([[위키링크]], 콜아웃)까지 지원하며, 폴더 트리와 다중 탭으로 여러 문서를 한 번에 탐색합니다.
