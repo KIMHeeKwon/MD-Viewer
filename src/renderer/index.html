@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta http-equiv="Content-Security-Policy"
-        content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: file:; font-src 'self'; frame-src file:; object-src file:">
+        content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: file:; font-src 'self'">
   <title>MD Viewer</title>
   <link rel="stylesheet" href="../../renderer-dist/renderer.css">
 </head>
@@ -16,6 +16,7 @@
       </div>
       <nav id="tree" aria-label="문서 트리"></nav>
     </aside>
+    <div id="resizer" title="드래그로 폭 조절 · 더블클릭으로 초기화"></div>
     <main id="main">
       <div id="tabbar" role="tablist"></div>
       <div id="docs">

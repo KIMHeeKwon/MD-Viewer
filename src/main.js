@@ -112,6 +112,15 @@ ipcMain.handle('file:read', async (_e, filePath) => {
   }
 });
 
+// PDF 원본 바이트 — 렌더러에는 Uint8Array로 전달된다
+ipcMain.handle('file:readBinary', async (_e, filePath) => {
+  try {
+    return { data: fs.readFileSync(filePath) };
+  } catch (err) {
+    return { error: String(err.message || err) };
+  }
+});
+
 ipcMain.handle('pdf:export', async (_e, suggestedName) => {
   const res = await dialog.showSaveDialog(win, {
     defaultPath: suggestedName,

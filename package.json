@@ -8,7 +8,7 @@
   "private": true,
   "main": "src/main.js",
   "scripts": {
-    "bundle": "esbuild src/renderer/renderer.js --bundle --outdir=renderer-dist --entry-names=renderer --minify --loader:.woff2=file --loader:.woff=file --loader:.ttf=file",
+    "bundle": "esbuild src/renderer/renderer.js --bundle --outdir=renderer-dist --entry-names=renderer --minify --loader:.woff2=file --loader:.woff=file --loader:.ttf=file && node -e \"require('fs').copyFileSync(require.resolve('pdfjs-dist/build/pdf.worker.min.mjs'), 'renderer-dist/pdf.worker.min.mjs')\"",
     "build": "npm run bundle",
     "start": "npm run bundle && electron .",
     "dist": "npm run bundle && electron-builder"
@@ -43,6 +43,7 @@
     "markdown-it-footnote": "^4.0.0",
     "markdown-it-task-lists": "^2.1.1",
     "markdown-it-texmath": "^1.0.0",
-    "mermaid": "^11.16.0"
+    "mermaid": "^11.16.0",
+    "pdfjs-dist": "^6.1.200"
   }
 }

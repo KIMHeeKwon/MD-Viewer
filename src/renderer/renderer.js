@@ -5,6 +5,7 @@ import texmath from 'markdown-it-texmath';
 import katex from 'katex';
 import hljs from 'highlight.js';
 import mermaid from 'mermaid';
+import * as pdfjsLib from 'pdfjs-dist';
 
 import 'katex/dist/katex.min.css';
 import 'highlight.js/styles/tokyo-night-dark.css';
@@ -104,6 +105,51 @@ const emptyEl = $('#empty-state');
 
 mermaid.initialize({ startOnLoad: false, theme: 'dark', securityLevel: 'strict' });
 let mermaidSeq = 0;
+
+pdfjsLib.GlobalWorkerOptions.workerSrc = '../../renderer-dist/pdf.worker.min.mjs';
+
+/* ---------- PDF 렌더링 (PDF.js — 앱 테마 안에 통합) ---------- */
+
+async function renderPdfInto(pane, path, tab) {
+  const scroll = document.createElement('div');
+  scroll.className = 'pdf-scroll';
+  const loading = document.createElement('div');
+  loading.className = 'pdf-loading';
+  loading.textContent = 'PDF 여는 중…';
+  scroll.append(loading);
+  pane.append(scroll);
+
+  const res = await window.api.readFileBinary(path);
+  if (res.error) {
+    loading.textContent = `열 수 없음: ${res.error}`;
+    return;
+  }
+  try {
+    const doc = await pdfjsLib.getDocument({ data: res.data }).promise;
+    tab.pdfDoc = doc;
+    loading.remove();
+    // 컨테이너 폭에 맞춰 렌더 (최대 900px), 레티나 대응
+    const targetW = Math.min(docsEl.clientWidth - 96, 900);
+    const dpr = window.devicePixelRatio || 1;
+    for (let p = 1; p <= doc.numPages; p++) {
+      const page = await doc.getPage(p);
+      const base = page.getViewport({ scale: 1 });
+      const scale = targetW / base.width;
+      const vp = page.getViewport({ scale: scale * dpr });
+      const canvas = document.createElement('canvas');
+      canvas.className = 'pdf-page';
+      canvas.width = vp.width;
+      canvas.height = vp.height;
+      canvas.style.width = `${vp.width / dpr}px`;
+      canvas.style.height = `${vp.height / dpr}px`;
+      scroll.append(canvas);
+      await page.render({ canvasContext: canvas.getContext('2d'), viewport: vp }).promise;
+    }
+  } catch (err) {
+    loading.textContent = `PDF 렌더링 실패: ${err.message || err}`;
+    if (!loading.isConnected) scroll.prepend(loading);
+  }
+}
 
 /* ---------- 렌더링 ---------- */
 
@@ -237,6 +283,7 @@ function activateTab(path) {
 function closeTab(path) {
   const idx = state.tabs.findIndex((t) => t.path === path);
   if (idx < 0) return;
+  if (state.tabs[idx].pdfDoc) state.tabs[idx].pdfDoc.destroy();
   state.tabs[idx].pane.remove();
   state.tabs.splice(idx, 1);
   if (state.active === path) {
@@ -259,13 +306,13 @@ async function openFile(path) {
   pane.className = 'doc-pane';
 
   if (isPdf) {
-    // Chromium 내장 PDF 뷰어로 열람
-    const frame = document.createElement('iframe');
-    frame.className = 'pdf-frame';
-    frame.src = `file://${path}`;
-    pane.append(frame);
     docsEl.append(pane);
-    state.tabs.push({ path, name, dir, pane, source: '', isPdf: true });
+    const tab = { path, name, dir, pane, source: '', isPdf: true, pdfDoc: null };
+    state.tabs.push(tab);
+    activateTab(path);
+    syncWatch();
+    await renderPdfInto(pane, path, tab);
+    return;
   } else {
     const res = await window.api.readFile(path);
     if (res.error) return;
@@ -356,6 +403,45 @@ window.api.onFileChanged(async (path) => {
   await renderInto(tab.pane, tab.source, tab.dir);
   tab.pane.scrollTop = scroll;
   if (tab.path === state.active) updateStatus();
+});
+
+/* ---------- 이벤트 결선 ---------- */
+
+/* ---------- 사이드바 리사이저 ---------- */
+
+const sidebarEl = $('#sidebar');
+const resizerEl = $('#resizer');
+const SIDEBAR_MIN = 160;
+const SIDEBAR_MAX = 480;
+const SIDEBAR_DEFAULT = 240;
+
+const savedWidth = Number(localStorage.getItem('sidebarWidth'));
+if (savedWidth >= SIDEBAR_MIN && savedWidth <= SIDEBAR_MAX) {
+  sidebarEl.style.width = `${savedWidth}px`;
+}
+
+resizerEl.addEventListener('mousedown', (e) => {
+  e.preventDefault();
+  resizerEl.classList.add('dragging');
+  document.body.classList.add('resizing');
+  const onMove = (ev) => {
+    const w = Math.min(SIDEBAR_MAX, Math.max(SIDEBAR_MIN, ev.clientX));
+    sidebarEl.style.width = `${w}px`;
+  };
+  const onUp = () => {
+    document.removeEventListener('mousemove', onMove);
+    document.removeEventListener('mouseup', onUp);
+    resizerEl.classList.remove('dragging');
+    document.body.classList.remove('resizing');
+    localStorage.setItem('sidebarWidth', String(sidebarEl.offsetWidth));
+  };
+  document.addEventListener('mousemove', onMove);
+  document.addEventListener('mouseup', onUp);
+});
+
+resizerEl.addEventListener('dblclick', () => {
+  sidebarEl.style.width = `${SIDEBAR_DEFAULT}px`;
+  localStorage.setItem('sidebarWidth', String(SIDEBAR_DEFAULT));
 });
 
 /* ---------- 이벤트 결선 ---------- */
