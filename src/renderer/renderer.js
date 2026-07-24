@@ -127,28 +127,96 @@ async function renderPdfInto(pane, path, tab) {
   try {
     const doc = await pdfjsLib.getDocument({ data: res.data }).promise;
     tab.pdfDoc = doc;
+    tab.pdfZoom = 1;
+    tab.pdfScroll = scroll;
     loading.remove();
-    // 컨테이너 폭에 맞춰 렌더 (최대 900px), 레티나 대응
-    const targetW = Math.min(docsEl.clientWidth - 96, 900);
-    const dpr = window.devicePixelRatio || 1;
-    for (let p = 1; p <= doc.numPages; p++) {
-      const page = await doc.getPage(p);
-      const base = page.getViewport({ scale: 1 });
-      const scale = targetW / base.width;
-      const vp = page.getViewport({ scale: scale * dpr });
-      const canvas = document.createElement('canvas');
-      canvas.className = 'pdf-page';
-      canvas.width = vp.width;
-      canvas.height = vp.height;
-      canvas.style.width = `${vp.width / dpr}px`;
-      canvas.style.height = `${vp.height / dpr}px`;
-      scroll.append(canvas);
-      await page.render({ canvasContext: canvas.getContext('2d'), viewport: vp }).promise;
-    }
+
+    const bar = document.createElement('div');
+    bar.className = 'pdf-toolbar';
+    bar.innerHTML = `
+      <button data-act="prev" title="이전 페이지">◀</button>
+      <span class="pdf-pageinfo">1 / ${doc.numPages}</span>
+      <button data-act="next" title="다음 페이지">▶</button>
+      <span class="pdf-sep"></span>
+      <button data-act="out" title="축소">−</button>
+      <span class="pdf-zoominfo">100%</span>
+      <button data-act="in" title="확대">＋</button>
+      <button data-act="fit" title="폭 맞춤">맞춤</button>`;
+    scroll.append(bar);
+    bar.addEventListener('click', (e) => {
+      const act = e.target.dataset.act;
+      if (!act) return;
+      if (act === 'prev' || act === 'next') movePdfPage(tab, pane, act === 'next' ? 1 : -1);
+      else {
+        const prevZoom = tab.pdfZoom;
+        if (act === 'in') tab.pdfZoom = Math.min(3, tab.pdfZoom * 1.25);
+        if (act === 'out') tab.pdfZoom = Math.max(0.4, tab.pdfZoom / 1.25);
+        if (act === 'fit') tab.pdfZoom = 1;
+        if (tab.pdfZoom !== prevZoom) rerenderPdf(tab, pane);
+      }
+    });
+
+    pane.addEventListener('scroll', () => updatePdfPageInfo(tab, pane));
+    await renderPdfPages(tab);
   } catch (err) {
     loading.textContent = `PDF 렌더링 실패: ${err.message || err}`;
     if (!loading.isConnected) scroll.prepend(loading);
   }
+}
+
+async function renderPdfPages(tab) {
+  const { pdfDoc: doc, pdfScroll: scroll } = tab;
+  // 진행 중인 이전 렌더링 무효화 (연속 줌 클릭 대응)
+  tab.pdfRenderToken = (tab.pdfRenderToken || 0) + 1;
+  const token = tab.pdfRenderToken;
+  for (const c of scroll.querySelectorAll('canvas.pdf-page')) c.remove();
+  const targetW = Math.min(docsEl.clientWidth - 96, 900) * tab.pdfZoom;
+  const dpr = window.devicePixelRatio || 1;
+  for (let p = 1; p <= doc.numPages; p++) {
+    if (token !== tab.pdfRenderToken) return;
+    const page = await doc.getPage(p);
+    const base = page.getViewport({ scale: 1 });
+    const vp = page.getViewport({ scale: (targetW / base.width) * dpr });
+    const canvas = document.createElement('canvas');
+    canvas.className = 'pdf-page';
+    canvas.width = vp.width;
+    canvas.height = vp.height;
+    canvas.style.width = `${vp.width / dpr}px`;
+    canvas.style.height = `${vp.height / dpr}px`;
+    scroll.append(canvas);
+    await page.render({ canvasContext: canvas.getContext('2d'), viewport: vp }).promise;
+  }
+  const zoomInfo = scroll.querySelector('.pdf-zoominfo');
+  if (zoomInfo) zoomInfo.textContent = `${Math.round(tab.pdfZoom * 100)}%`;
+}
+
+async function rerenderPdf(tab, pane) {
+  const ratio = pane.scrollHeight > 0 ? pane.scrollTop / pane.scrollHeight : 0;
+  await renderPdfPages(tab);
+  pane.scrollTop = ratio * pane.scrollHeight;
+}
+
+function currentPdfPage(tab, pane) {
+  const canvases = [...tab.pdfScroll.querySelectorAll('canvas.pdf-page')];
+  const anchor = pane.scrollTop + 80;
+  for (let i = 0; i < canvases.length; i++) {
+    if (canvases[i].offsetTop + canvases[i].offsetHeight > anchor) return i;
+  }
+  return Math.max(0, canvases.length - 1);
+}
+
+function movePdfPage(tab, pane, delta) {
+  const canvases = [...tab.pdfScroll.querySelectorAll('canvas.pdf-page')];
+  if (!canvases.length) return;
+  const next = Math.min(canvases.length - 1, Math.max(0, currentPdfPage(tab, pane) + delta));
+  pane.scrollTop = canvases[next].offsetTop - 64;
+  updatePdfPageInfo(tab, pane);
+}
+
+function updatePdfPageInfo(tab, pane) {
+  const info = tab.pdfScroll && tab.pdfScroll.querySelector('.pdf-pageinfo');
+  if (!info || !tab.pdfDoc) return;
+  info.textContent = `${currentPdfPage(tab, pane) + 1} / ${tab.pdfDoc.numPages}`;
 }
 
 /* ---------- 렌더링 ---------- */

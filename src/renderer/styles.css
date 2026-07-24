@@ -153,7 +153,7 @@ body.resizing { cursor: col-resize; user-select: none; }
 
 /* ---- 문서 영역 ---- */
 #docs { flex: 1; min-height: 0; position: relative; }
-.doc-pane { position: absolute; inset: 0; overflow-y: auto; display: none; }
+.doc-pane { position: absolute; inset: 0; overflow: auto; display: none; }
 .doc-pane.active { display: block; }
 #empty-state {
   height: 100%;
@@ -283,8 +283,37 @@ body.resizing { cursor: col-resize; user-select: none; }
   flex-direction: column;
   align-items: center;
   gap: 20px;
-  padding: 32px 24px;
+  padding: 12px 24px 32px;
+  min-width: fit-content; /* 확대 시 가로 스크롤에서 좌측 잘림 방지 */
 }
+.pdf-toolbar {
+  order: -1;
+  position: sticky;
+  top: 12px;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--side);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 5px 10px;
+  box-shadow: 0 3px 12px rgba(0, 0, 0, .3);
+  font-family: "JetBrains Mono", "SF Mono", Consolas, monospace;
+  font-size: 12px;
+}
+.pdf-toolbar button {
+  border: none;
+  background: var(--soft);
+  color: var(--fg);
+  border-radius: 5px;
+  padding: 3px 9px;
+  cursor: pointer;
+  font-size: 12px;
+}
+.pdf-toolbar button:hover { color: var(--accent); }
+.pdf-pageinfo, .pdf-zoominfo { color: var(--dim); min-width: 52px; text-align: center; }
+.pdf-sep { width: 1px; height: 16px; background: var(--line); margin: 0 4px; }
 .pdf-page {
   box-shadow: 0 4px 18px rgba(0, 0, 0, .45);
   border-radius: 2px;

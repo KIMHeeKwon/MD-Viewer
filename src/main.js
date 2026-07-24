@@ -6,6 +6,8 @@ const chokidar = require('chokidar');
 const FILE_EXT = /\.(md|markdown|mdown|pdf)$/i;
 const isMac = process.platform === 'darwin';
 
+app.setName('MD Viewer'); // 개발 모드에서 메뉴 라벨 보정 (번들 이름은 패키징 시 productName 적용)
+
 let win = null;
 const watchers = new Map(); // path -> FSWatcher
 
