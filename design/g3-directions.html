@@ -1,0 +1,258 @@
+<meta charset="utf-8">
+<title>MD Viewer — G3 시각 방향 4안</title>
+<style>
+  :root {
+    --pg-bg: #f4f5f7;
+    --pg-fg: #23262b;
+    --pg-muted: #6b7280;
+    --pg-line: #d8dbe0;
+    --pg-accent: #3b5bdb;
+    --pg-card: #ffffff;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --pg-bg:#17181c; --pg-fg:#e3e5e8; --pg-muted:#9aa1ab; --pg-line:#33363d; --pg-accent:#748ffc; --pg-card:#1f2126; }
+  }
+  :root[data-theme="dark"] { --pg-bg:#17181c; --pg-fg:#e3e5e8; --pg-muted:#9aa1ab; --pg-line:#33363d; --pg-accent:#748ffc; --pg-card:#1f2126; }
+  :root[data-theme="light"] { --pg-bg:#f4f5f7; --pg-fg:#23262b; --pg-muted:#6b7280; --pg-line:#d8dbe0; --pg-accent:#3b5bdb; --pg-card:#ffffff; }
+
+  body { background: var(--pg-bg); color: var(--pg-fg); font-family: "Apple SD Gothic Neo", "Pretendard", -apple-system, "Segoe UI", sans-serif; line-height: 1.6; margin: 0; padding: 40px 20px 80px; }
+  .wrap { max-width: 1060px; margin: 0 auto; }
+  .eyebrow { font-size: 12px; letter-spacing: .14em; color: var(--pg-accent); font-weight: 700; }
+  h1.page { font-size: 26px; margin: 6px 0 8px; text-wrap: balance; }
+  p.lede { color: var(--pg-muted); margin: 0 0 40px; max-width: 62ch; }
+  section.dir { margin-bottom: 64px; }
+  .dir-head { display: flex; align-items: baseline; gap: 12px; margin-bottom: 6px; }
+  .dir-key { font-size: 13px; font-weight: 800; color: var(--pg-accent); border: 1.5px solid var(--pg-accent); border-radius: 4px; padding: 1px 8px; }
+  .dir-head h2 { font-size: 19px; margin: 0; }
+  .dir-thesis { color: var(--pg-muted); font-size: 14px; margin: 0 0 14px; }
+  .notes { font-size: 13.5px; color: var(--pg-muted); margin: 12px 2px 0; max-width: 80ch; }
+  .notes b { color: var(--pg-fg); }
+
+  /* ---------- shared app-frame skeleton ---------- */
+  .frame { border: 1px solid var(--pg-line); border-radius: 10px; overflow: hidden; box-shadow: 0 8px 28px rgba(0,0,0,.10); background: var(--f-bg); color: var(--f-fg); font-family: var(--f-body); }
+  .titlebar { display: flex; align-items: center; gap: 7px; height: 34px; padding: 0 12px; background: var(--f-titlebar); border-bottom: 1px solid var(--f-line); font-size: 11.5px; color: var(--f-dim); }
+  .dot { width: 11px; height: 11px; border-radius: 50%; }
+  .dot:nth-child(1){background:#ff5f57}.dot:nth-child(2){background:#febc2e}.dot:nth-child(3){background:#28c840}
+  .titlebar span { margin-left: 8px; }
+  .app { display: flex; height: 560px; }
+  .tree { width: 208px; flex: none; background: var(--f-side); border-right: 1px solid var(--f-line); padding: 12px 0; font-size: 12.5px; overflow: hidden; }
+  .tree .sec { padding: 3px 14px; font-size: 10.5px; letter-spacing: .1em; color: var(--f-dim); font-weight: 700; margin-top: 8px; }
+  .tree .it { padding: 3.5px 14px 3.5px 26px; color: var(--f-dim); white-space: nowrap; }
+  .tree .it.on { color: var(--f-accent); background: var(--f-sel); font-weight: 600; }
+  .tree .fold { padding: 3.5px 14px; color: var(--f-fg); font-weight: 600; }
+  .main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+  .tabs { display: flex; gap: 2px; padding: 6px 10px 0; background: var(--f-tabbar); border-bottom: 1px solid var(--f-line); font-size: 12px; }
+  .tab { padding: 6px 14px; color: var(--f-dim); border-radius: 6px 6px 0 0; }
+  .tab.on { background: var(--f-bg); color: var(--f-fg); font-weight: 600; box-shadow: inset 0 2px 0 var(--f-accent); }
+  .doc { flex: 1; overflow: hidden; padding: 28px 36px; }
+  .doc-inner { max-width: var(--f-measure, 100%); margin: 0 auto; }
+
+  /* rendered-markdown sample, styled through frame tokens */
+  .doc h1 { font-family: var(--f-display); font-size: var(--f-h1, 25px); margin: 0 0 4px; line-height: 1.25; }
+  .doc .meta { font-size: 12px; color: var(--f-dim); margin-bottom: 16px; }
+  .doc h2 { font-family: var(--f-display); font-size: 17px; margin: 20px 0 8px; padding-bottom: var(--f-h2pad, 0); border-bottom: var(--f-h2rule, none); }
+  .doc p { font-size: 13.5px; line-height: 1.75; margin: 0 0 10px; }
+  .doc a { color: var(--f-accent); text-decoration: none; }
+  .doc .wik { color: var(--f-accent); border-bottom: 1px dashed var(--f-accent); }
+  .doc table { border-collapse: collapse; font-size: 12.5px; margin: 10px 0; color: inherit; font-family: inherit; }
+  .doc th, .doc td { border: 1px solid var(--f-line); padding: 5px 12px; }
+  .doc th { background: var(--f-soft); }
+  .doc code { font-family: var(--f-mono); font-size: 12px; background: var(--f-soft); padding: 1.5px 5px; border-radius: 4px; }
+  .doc pre { background: var(--f-codebg); color: var(--f-codefg); border: 1px solid var(--f-line); border-radius: 8px; padding: 12px 14px; font-family: var(--f-mono); font-size: 12px; line-height: 1.6; overflow: hidden; margin: 10px 0; }
+  .doc pre code { background: none; padding: 0; color: inherit; }
+  .k{color:var(--f-syn1)} .s{color:var(--f-syn2)} .f{color:var(--f-syn3)} .c{color:var(--f-dim)}
+  .doc .call { border-left: 3.5px solid var(--f-accent); background: var(--f-callbg); border-radius: 0 8px 8px 0; padding: 9px 14px; margin: 12px 0; font-size: 13px; }
+  .doc .call .ct { font-weight: 700; color: var(--f-accent); font-size: 12px; margin-bottom: 3px; }
+  .doc .math { font-family: Georgia, serif; font-style: italic; text-align: center; padding: 8px 0; font-size: 15px; }
+  .doc ul.task { list-style: none; padding-left: 4px; font-size: 13.5px; margin: 8px 0; }
+  .doc ul.task li { margin: 3px 0; }
+  .doc .cb { display: inline-block; width: 13px; height: 13px; border: 1.5px solid var(--f-dim); border-radius: 3.5px; vertical-align: -2px; margin-right: 7px; }
+  .doc .cb.x { background: var(--f-accent); border-color: var(--f-accent); position: relative; }
+  .doc .cb.x::after { content: "✓"; color: #fff; font-size: 10px; position: absolute; left: 2px; top: -2.5px; }
+  .doc .done { color: var(--f-dim); text-decoration: line-through; }
+
+  /* ---------- A. GitHub 표준 ---------- */
+  .dA { --f-bg:#ffffff; --f-fg:#1f2328; --f-dim:#59636e; --f-line:#d1d9e0; --f-side:#f6f8fa; --f-titlebar:#f6f8fa; --f-tabbar:#f6f8fa;
+        --f-accent:#0969da; --f-sel:#e7ecf1; --f-soft:#f6f8fa; --f-codebg:#f6f8fa; --f-codefg:#1f2328; --f-callbg:#ddf4ff66;
+        --f-syn1:#cf222e; --f-syn2:#0a3069; --f-syn3:#8250df;
+        --f-body:-apple-system,"Segoe UI","Apple SD Gothic Neo",sans-serif; --f-display:var(--f-body); --f-mono:ui-monospace,"SF Mono",Consolas,monospace;
+        --f-h2rule:1px solid #d1d9e0; --f-h2pad:6px; }
+
+  /* ---------- B. 서재 ---------- */
+  .dB { --f-bg:#faf6ee; --f-fg:#3d372c; --f-dim:#8a8272; --f-line:#e3dccb; --f-side:#f3edde; --f-titlebar:#f3edde; --f-tabbar:transparent;
+        --f-accent:#4a6b52; --f-sel:#e9e2cf; --f-soft:#f0e9d8; --f-codebg:#332f27; --f-codefg:#e8e2d2; --f-callbg:#e9e2cf88;
+        --f-syn1:#d8a657; --f-syn2:#a9b665; --f-syn3:#e78a4e;
+        --f-body:Charter,Georgia,"Apple SD Gothic Neo",serif; --f-display:var(--f-body); --f-mono:"SF Mono",Consolas,monospace;
+        --f-measure: 58ch; --f-h1: 27px; }
+  .dB .tab { border-radius: 0; background: none; }
+  .dB .tab.on { box-shadow: inset 0 -2px 0 var(--f-accent); background: none; }
+  .dB .tabs { border-bottom: none; padding-top: 10px; justify-content: center; }
+  .dB .doc h1 { text-align: center; }
+  .dB .doc .meta { text-align: center; }
+  .dB .doc h2 { font-variant: small-caps; letter-spacing: .04em; }
+
+  /* ---------- C. IDE 다크 ---------- */
+  .dC { --f-bg:#1a1b26; --f-fg:#c0caf5; --f-dim:#565f89; --f-line:#101014; --f-side:#16161e; --f-titlebar:#16161e; --f-tabbar:#16161e;
+        --f-accent:#7aa2f7; --f-sel:#292e42; --f-soft:#24283b; --f-codebg:#16161e; --f-codefg:#c0caf5; --f-callbg:#24283b;
+        --f-syn1:#bb9af7; --f-syn2:#9ece6a; --f-syn3:#7aa2f7;
+        --f-body:"Segoe UI","Apple SD Gothic Neo",sans-serif; --f-display:var(--f-body); --f-mono:"JetBrains Mono","SF Mono",Consolas,monospace; }
+  .dC .tab { border-radius: 0; border-right: 1px solid var(--f-line); }
+  .dC .tab.on { box-shadow: inset 0 2px 0 var(--f-accent); }
+  .dC .tabs { padding: 0; gap: 0; }
+  .dC .tab { padding: 8px 16px; }
+  .dC .status { height: 24px; background: var(--f-accent); color: #16161e; font-size: 11px; display: flex; align-items: center; gap: 16px; padding: 0 12px; font-family: var(--f-mono); }
+
+  /* ---------- D. 젠 미니멀 ---------- */
+  .dD { --f-bg:#fcfcfc; --f-fg:#37352f; --f-dim:#b3b0a9; --f-line:#eceae6; --f-side:#fcfcfc; --f-titlebar:#fcfcfc; --f-tabbar:transparent;
+        --f-accent:#c2402a; --f-sel:#f4f2ee; --f-soft:#f4f2ee; --f-codebg:#f7f6f3; --f-codefg:#37352f; --f-callbg:#f7f6f3;
+        --f-syn1:#c2402a; --f-syn2:#6b6862; --f-syn3:#37352f;
+        --f-body:"Avenir Next","Apple SD Gothic Neo",sans-serif; --f-display:var(--f-body); --f-mono:"SF Mono",Consolas,monospace;
+        --f-measure: 56ch; --f-h1: 28px; }
+  .dD .tree { width: 44px; padding: 14px 0; }
+  .dD .tree .sec, .dD .tree .it, .dD .tree .fold { padding: 6px 0; text-align: center; white-space: nowrap; overflow: hidden; }
+  .dD .tree .glyph { display: block; font-size: 15px; opacity: .45; padding: 7px 0; }
+  .dD .tree .glyph.on { opacity: 1; color: var(--f-accent); }
+  .dD .tabs { border-bottom: none; justify-content: center; gap: 8px; padding: 12px 0 0; }
+  .dD .tab { border-radius: 999px; padding: 4px 16px; background: none; border: 1px solid transparent; }
+  .dD .tab.on { border-color: var(--f-line); background: #fff; box-shadow: 0 1px 4px rgba(0,0,0,.05); }
+  .dD .doc h1 { font-weight: 500; letter-spacing: -.01em; }
+  .dD .doc pre { border: none; }
+
+  .choose { border: 1.5px dashed var(--pg-accent); border-radius: 12px; padding: 20px 24px; background: var(--pg-card); }
+  .choose h2 { margin: 0 0 8px; font-size: 17px; }
+  .choose p { margin: 0; font-size: 14px; color: var(--pg-muted); }
+  .frame { overflow-x: auto; }
+  .app, .titlebar, .status { min-width: 720px; }
+</style>
+
+<div class="wrap">
+  <div class="eyebrow">MD-VIEWER-ALL · G3 BRAINSTORM</div>
+  <h1 class="page">시각 방향 4안 — 같은 문서, 극단적으로 다른 네 개의 뷰어</h1>
+  <p class="lede">동일한 샘플 마크다운 문서(제목·표·코드·수식·콜아웃·위키링크·작업 목록)를 네 가지 방향의 앱 셸로 렌더링했습니다. 정답은 없습니다 — 어느 것이 "작성자의 의도대로 보인다"고 느껴지는지 반응을 주시면 됩니다. 섞는 것(예: C의 셸 + B의 본문 조판)도 가능합니다.</p>
+
+  <!-- ============ A ============ -->
+  <section class="dir">
+    <div class="dir-head"><span class="dir-key">A</span><h2>GitHub 표준</h2></div>
+    <p class="dir-thesis">"GitHub에서 보이는 그대로" — 가장 익숙하고 예측 가능한 GFM 렌더링. 충실도의 기준선.</p>
+    <div class="frame dA">
+      <div class="titlebar"><i class="dot"></i><i class="dot"></i><i class="dot"></i><span>MD Viewer — ~/Documents/ULSOO-docs</span></div>
+      <div class="app">
+        <aside class="tree" data-tree></aside>
+        <div class="main">
+          <div class="tabs" data-tabs></div>
+          <div class="doc"><div class="doc-inner" data-doc></div></div>
+        </div>
+      </div>
+    </div>
+    <p class="notes"><b>장점:</b> 협업자와 보는 화면이 동일, 학습 비용 0. <b>단점:</b> 개성 없음, 장문 독서 피로는 그대로.</p>
+  </section>
+
+  <!-- ============ B ============ -->
+  <section class="dir">
+    <div class="dir-head"><span class="dir-key">B</span><h2>서재 (Paper)</h2></div>
+    <p class="dir-thesis">"문서를 책처럼 읽는다" — 세리프 조판, 좁은 본문 폭, 중앙 정렬 제목. 크롬은 뒤로 물러난다.</p>
+    <div class="frame dB">
+      <div class="titlebar"><i class="dot"></i><i class="dot"></i><i class="dot"></i><span>MD Viewer — ~/Documents/ULSOO-docs</span></div>
+      <div class="app">
+        <aside class="tree" data-tree></aside>
+        <div class="main">
+          <div class="tabs" data-tabs></div>
+          <div class="doc"><div class="doc-inner" data-doc></div></div>
+        </div>
+      </div>
+    </div>
+    <p class="notes"><b>장점:</b> 장문 연구 문서 통독에 최적, 인쇄물 감각. <b>단점:</b> 표·코드 위주 기술 문서에서는 세리프가 이질적일 수 있음.</p>
+  </section>
+
+  <!-- ============ C ============ -->
+  <section class="dir">
+    <div class="dir-head"><span class="dir-key">C</span><h2>IDE 다크</h2></div>
+    <p class="dir-thesis">"코드의 연장선에 있는 문서" — VS Code 계열의 밀도와 다크 팔레트, 하단 상태 바, 강한 신택스 컬러.</p>
+    <div class="frame dC">
+      <div class="titlebar"><i class="dot"></i><i class="dot"></i><i class="dot"></i><span>MD Viewer — ~/Documents/ULSOO-docs</span></div>
+      <div class="app">
+        <aside class="tree" data-tree></aside>
+        <div class="main">
+          <div class="tabs" data-tabs></div>
+          <div class="doc"><div class="doc-inner" data-doc></div></div>
+        </div>
+      </div>
+      <div class="status"><span>UTF-8</span><span>GFM+Obsidian</span><span>1,824 words</span><span>watching: on</span></div>
+    </div>
+    <p class="notes"><b>장점:</b> 코드 블록·다이어그램이 주인공인 문서에 강함, 야간 작업 친화. <b>단점:</b> 밝은 도표·이미지가 많은 문서에서는 대비 관리 필요.</p>
+  </section>
+
+  <!-- ============ D ============ -->
+  <section class="dir">
+    <div class="dir-head"><span class="dir-key">D</span><h2>젠 미니멀</h2></div>
+    <p class="dir-thesis">"크롬이 사라진 뷰어" — 사이드바는 아이콘 레일로 접히고, 탭은 알약형으로 떠 있으며, 화면의 90%가 본문.</p>
+    <div class="frame dD">
+      <div class="titlebar"><i class="dot"></i><i class="dot"></i><i class="dot"></i><span>MD Viewer</span></div>
+      <div class="app">
+        <aside class="tree">
+          <span class="glyph on">📁</span><span class="glyph">🔍</span><span class="glyph">🕘</span><span class="glyph">⚙︎</span>
+        </aside>
+        <div class="main">
+          <div class="tabs" data-tabs></div>
+          <div class="doc"><div class="doc-inner" data-doc></div></div>
+        </div>
+      </div>
+    </div>
+    <p class="notes"><b>장점:</b> 문서 몰입 극대화, Typora 계열의 정제된 감각. <b>단점:</b> 트리가 접혀 있어 "폴더 뭉치 탐색" 시나리오에서는 클릭이 한 번 늘어남.</p>
+  </section>
+
+  <div class="choose">
+    <h2>다음 단계</h2>
+    <p>방향 하나(또는 조합)를 지목해 주시면, 수렴 결과를 <b>DESIGN.md</b>에 디자인 토큰(색·타이포·간격·금지 목록)으로 고정하고 G4.5 구현 계획으로 넘어갑니다. 모든 방향에서 다크/라이트 테마 전환은 기본 탑재 예정입니다.</p>
+  </div>
+</div>
+
+<template id="tpl-tree">
+  <div class="fold">▾ ULSOO-docs</div>
+  <div class="it on">아키텍처-개요.md</div>
+  <div class="it">STT-파이프라인.md</div>
+  <div class="it">지식그래프-설계.md</div>
+  <div class="fold">▸ 회의록</div>
+  <div class="fold">▾ 제안서</div>
+  <div class="it">2026-사업계획.md</div>
+  <div class="it">차별성-논리.md</div>
+</template>
+
+<template id="tpl-tabs">
+  <div class="tab on">아키텍처-개요.md</div>
+  <div class="tab">STT-파이프라인.md</div>
+  <div class="tab">지식그래프-설계.md</div>
+</template>
+
+<template id="tpl-doc">
+  <h1>ULSOO 지능형 공유 플랫폼 — 아키텍처 개요</h1>
+  <div class="meta">2026-07-24 · 김희권 · <span class="wik">[[CIDOC-CRM-매핑]]</span> 참조</div>
+  <p>본 문서는 멀티 에이전트 오케스트레이션 기반의 문화유산 메타데이터 생성 파이프라인을 기술한다. 전체 흐름은 <a>STT-파이프라인.md</a>의 전사 결과를 입력으로 받아 지식 그래프에 적재하는 구조다.</p>
+  <div class="call"><div class="ct">ⓘ NOTE — Obsidian 콜아웃</div>추론 서버는 RTX 6000 Blackwell(96GB) 단일 워크스테이션을 전제로 하며, outbound-only 방화벽 제약을 준수한다.</div>
+  <h2>모듈 구성</h2>
+  <table>
+    <tr><th>모듈</th><th>역할</th><th>스택</th></tr>
+    <tr><td>Transcriber</td><td>음성 → 텍스트 전사</td><td>Whisper / vLLM</td></tr>
+    <tr><td>Extractor</td><td>개체·관계 추출</td><td>Python</td></tr>
+    <tr><td>GraphWriter</td><td>CIDOC CRM 적재</td><td>C + SPARQL</td></tr>
+  </table>
+  <h2>손실 함수</h2>
+  <div class="math">ℒ<sub>total</sub> = ℒ<sub>rec</sub> + λ · ℒ<sub>KG</sub>,&nbsp;&nbsp; λ ∈ [0.1, 0.5]</div>
+  <h2>파이프라인 진입점</h2>
+  <pre><code><span class="c"># entity extraction entry</span>
+<span class="k">def</span> <span class="f">extract</span>(chunk: <span class="s">str</span>) -&gt; Graph:
+    ents = ner_model.run(chunk)
+    <span class="k">return</span> to_cidoc(ents, schema=<span class="s">"E22_Man-Made_Object"</span>)</code></pre>
+  <ul class="task">
+    <li><span class="cb x"></span><span class="done">GFM 표·작업 목록 렌더링</span></li>
+    <li><span class="cb x"></span><span class="done">KaTeX 수식 지원</span></li>
+    <li><span class="cb"></span>Mermaid 다이어그램 연동</li>
+  </ul>
+</template>
+
+<script>
+  const t = id => document.getElementById(id).content;
+  document.querySelectorAll("[data-tree]").forEach(el => el.append(t("tpl-tree").cloneNode(true)));
+  document.querySelectorAll("[data-tabs]").forEach(el => el.append(t("tpl-tabs").cloneNode(true)));
+  document.querySelectorAll("[data-doc]").forEach(el => el.append(t("tpl-doc").cloneNode(true)));
+</script>
