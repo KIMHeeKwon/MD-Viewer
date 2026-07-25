@@ -485,6 +485,14 @@ async function toggleTheme() {
 
 const outlineEl = $('#outline');
 const outlineHead = $('#outline-head');
+const outlineResizer = $('#outline-resizer');
+const OUTLINE_MIN = 60;
+let outlineHeight = Number(localStorage.getItem('outlineHeight')) || 0;
+
+function applyOutlineHeight(h) {
+  outlineHeight = h;
+  outlineEl.style.flex = `0 0 ${h}px`;
+}
 
 function slugify(s) {
   return s.trim().toLowerCase().replace(/\s+/g, '-').replace(/[^\w가-힣-]/g, '').slice(0, 60) || 'h';
@@ -500,6 +508,7 @@ function refreshOutline() {
     return;
   }
   sidebarEl.classList.add('has-outline');
+  if (outlineHeight >= OUTLINE_MIN) applyOutlineHeight(outlineHeight); // 저장된 분할 높이 유지
   const frag = document.createDocumentFragment();
   for (const h of headings) {
     const level = Number(h.tagName[1]);
@@ -536,6 +545,30 @@ outlineHead.addEventListener('click', () => {
   sidebarEl.classList.toggle('outline-collapsed');
   outlineHead.querySelector('.outline-caret').textContent =
     sidebarEl.classList.contains('outline-collapsed') ? '▸' : '▾';
+});
+
+// 트리 ↔ 개요 세로 분할 리사이저
+outlineResizer.addEventListener('mousedown', (e) => {
+  e.preventDefault();
+  outlineResizer.classList.add('dragging');
+  document.body.classList.add('resizing-v');
+  const headH = outlineHead.offsetHeight;
+  const onMove = (ev) => {
+    const rect = sidebarEl.getBoundingClientRect();
+    const maxH = sidebarEl.clientHeight - 160; // 트리 최소 높이 확보
+    let h = rect.bottom - ev.clientY - headH;
+    h = Math.max(OUTLINE_MIN, Math.min(Math.max(OUTLINE_MIN, maxH), h));
+    applyOutlineHeight(h);
+  };
+  const onUp = () => {
+    document.removeEventListener('mousemove', onMove);
+    document.removeEventListener('mouseup', onUp);
+    outlineResizer.classList.remove('dragging');
+    document.body.classList.remove('resizing-v');
+    localStorage.setItem('outlineHeight', String(Math.round(outlineHeight)));
+  };
+  document.addEventListener('mousemove', onMove);
+  document.addEventListener('mouseup', onUp);
 });
 
 /* ---------- 문서 내 찾기 (⌘F) ---------- */
