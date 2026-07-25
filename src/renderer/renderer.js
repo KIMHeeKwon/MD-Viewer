@@ -254,6 +254,11 @@ async function renderInto(pane, source, dir) {
       if (found) openFile(found);
     });
   }
+
+  // 헤딩에 id 부여 (아웃라인 점프 + 문서 내 앵커 링크용)
+  body.querySelectorAll('h1, h2, h3, h4, h5, h6').forEach((h, i) => {
+    if (!h.id) h.id = `hd-${i}-${slugify(h.textContent)}`;
+  });
 }
 
 /* ---------- 트리 ---------- */
@@ -359,6 +364,7 @@ function activateTab(path) {
   markActiveInTree();
   updateStatus();
   refreshFind();
+  refreshOutline();
 }
 
 function closeTab(path) {
@@ -403,6 +409,7 @@ async function openFile(path) {
     docsEl.append(pane);
     const tab = { path, name, dir, pane, source: res.content, isPdf: false };
     state.tabs.push(tab);
+    pane.addEventListener('scroll', () => { if (state.active === path) updateOutlineActive(tab); });
     await renderInto(pane, res.content, dir);
   }
   activateTab(path);
@@ -470,7 +477,65 @@ async function toggleTheme() {
     tab.pane.scrollTop = scroll;
   }
   refreshFind();
+  refreshOutline();
 }
+
+/* ---------- 개요(아웃라인) 패널 ---------- */
+
+const outlineEl = $('#outline');
+const outlineHead = $('#outline-head');
+
+function slugify(s) {
+  return s.trim().toLowerCase().replace(/\s+/g, '-').replace(/[^\w가-힣-]/g, '').slice(0, 60) || 'h';
+}
+
+function refreshOutline() {
+  const tab = activeTab();
+  const body = tab && !tab.isPdf ? tab.pane.querySelector('.doc-body') : null;
+  outlineEl.textContent = '';
+  const headings = body ? [...body.querySelectorAll('h1, h2, h3, h4, h5, h6')] : [];
+  if (!headings.length) {
+    sidebarEl.classList.remove('has-outline');
+    return;
+  }
+  sidebarEl.classList.add('has-outline');
+  const frag = document.createDocumentFragment();
+  for (const h of headings) {
+    const level = Number(h.tagName[1]);
+    const item = document.createElement('div');
+    item.className = 'outline-item';
+    item.style.paddingLeft = `${12 + (level - 1) * 12}px`;
+    item.textContent = h.textContent;
+    item.title = h.textContent;
+    item.addEventListener('click', () => h.scrollIntoView({ block: 'start', behavior: 'smooth' }));
+    frag.append(item);
+  }
+  outlineEl.append(frag);
+  updateOutlineActive(tab);
+}
+
+function updateOutlineActive(tab) {
+  if (!tab || tab.isPdf) return;
+  const body = tab.pane.querySelector('.doc-body');
+  if (!body) return;
+  const headings = [...body.querySelectorAll('h1, h2, h3, h4, h5, h6')];
+  const items = outlineEl.querySelectorAll('.outline-item');
+  if (headings.length !== items.length) return;
+  const threshold = tab.pane.scrollTop + 16;
+  let activeIdx = 0;
+  for (let i = 0; i < headings.length; i++) {
+    if (topInPane(headings[i], tab.pane) <= threshold) activeIdx = i;
+    else break;
+  }
+  items.forEach((it, i) => it.classList.toggle('active', i === activeIdx));
+  if (items[activeIdx]) items[activeIdx].scrollIntoView({ block: 'nearest' });
+}
+
+outlineHead.addEventListener('click', () => {
+  sidebarEl.classList.toggle('outline-collapsed');
+  outlineHead.querySelector('.outline-caret').textContent =
+    sidebarEl.classList.contains('outline-collapsed') ? '▸' : '▾';
+});
 
 /* ---------- 문서 내 찾기 (⌘F) ---------- */
 
@@ -652,7 +717,7 @@ window.api.onFileChanged(async (path) => {
   const scroll = tab.pane.scrollTop;
   await renderInto(tab.pane, tab.source, tab.dir);
   tab.pane.scrollTop = scroll;
-  if (tab.path === state.active) { updateStatus(); refreshFind(); }
+  if (tab.path === state.active) { updateStatus(); refreshFind(); refreshOutline(); }
 });
 
 /* ---------- 이벤트 결선 ---------- */
