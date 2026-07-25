@@ -10,7 +10,10 @@ Supports GitHub Flavored Markdown plus math (KaTeX), diagrams (Mermaid), syntax 
 
 - **Rich syntax support** — GFM (tables, task lists, strikethrough, footnotes), KaTeX math, Mermaid diagrams, code syntax highlighting, Obsidian wikilinks & callouts
 - **Folder tree + tabs** — Open a folder to see the document tree in the sidebar, and open documents in multiple tabs. Sidebar width is draggable and remembered
+- **Outline panel** — Heading list at the bottom of the sidebar; click to jump, with the current position tracked as you scroll
 - **Find in document (⌘F)** — Match highlighting, match count, previous/next navigation
+- **Project-wide search (⌘⇧F)** — Search across all Markdown files in the folder; click a result to jump to that document
+- **Session restore** — Reopens the last folder and open tabs on the next launch
 - **PDF** — View PDF files (integrated into the app theme, with page navigation and zoom) and export Markdown to PDF (⌘E, always output in light theme)
 - **File watching** — Automatically re-renders when a document is saved from an external editor (VS Code, Obsidian, etc.)
 - **Dark / light theme** (⌘⇧L)
@@ -33,6 +36,7 @@ Download the file for your platform from [Releases](https://github.com/KIMHeeKwo
 |--------|----------|
 | Open folder | ⌘O |
 | Find in document | ⌘F |
+| Project-wide search | ⌘⇧F |
 | Export to PDF | ⌘E |
 | Toggle theme | ⌘⇧L |
 | Zoom in / out | ⌘+ / ⌘− |
