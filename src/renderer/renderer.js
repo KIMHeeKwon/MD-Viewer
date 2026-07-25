@@ -365,6 +365,7 @@ function activateTab(path) {
   updateStatus();
   refreshFind();
   refreshOutline();
+  saveSession();
 }
 
 function closeTab(path) {
@@ -695,9 +696,7 @@ $('#find-close').addEventListener('click', closeFind);
 
 /* ---------- 폴더 열기 / 파일 감시 ---------- */
 
-async function openFolder() {
-  const res = await window.api.openFolder();
-  if (!res) return;
+function loadFolder(res) {
   state.root = res.root;
   state.rootName = res.name;
   state.tree = res.tree;
@@ -706,6 +705,45 @@ async function openFolder() {
   $('#root-name').textContent = res.name;
   renderTree();
   updateStatus();
+}
+
+async function openFolder() {
+  const res = await window.api.openFolder();
+  if (!res) return;
+  loadFolder(res);
+  saveSession();
+}
+
+/* ---------- 세션 저장 / 복원 ---------- */
+
+function saveSession() {
+  localStorage.setItem('session', JSON.stringify({
+    root: state.root,
+    tabs: state.tabs.map((t) => t.path),
+    active: state.active,
+  }));
+}
+
+function collectFiles(nodes, set) {
+  for (const n of nodes) {
+    if (n.type === 'file') set.add(n.path);
+    else collectFiles(n.children, set);
+  }
+}
+
+async function restoreSession() {
+  let s;
+  try { s = JSON.parse(localStorage.getItem('session') || 'null'); } catch { s = null; }
+  if (!s || !s.root) return;
+  const res = await window.api.openFolderPath(s.root);
+  if (!res || res.error) return; // 폴더가 사라졌으면 조용히 건너뜀
+  loadFolder(res);
+  const existing = new Set();
+  collectFiles(state.tree, existing);
+  for (const p of s.tabs || []) {
+    if (existing.has(p)) await openFile(p); // 삭제된 파일은 복원하지 않음
+  }
+  if (s.active && state.tabs.some((t) => t.path === s.active)) activateTab(s.active);
 }
 
 window.api.onFileChanged(async (path) => {
@@ -767,3 +805,6 @@ window.api.onMenu('menu:open-folder', openFolder);
 window.api.onMenu('menu:toggle-theme', toggleTheme);
 window.api.onMenu('menu:export-pdf', exportPdf);
 window.api.onMenu('menu:find', openFind);
+
+// 마지막 세션(폴더 + 열린 탭) 복원
+restoreSession();

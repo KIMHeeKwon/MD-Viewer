@@ -111,6 +111,16 @@ ipcMain.handle('folder:open', async () => {
   return { root, name: path.basename(root), tree: readTree(root) };
 });
 
+// 대화상자 없이 경로로 폴더 스캔 (세션 복원용)
+ipcMain.handle('folder:openPath', async (_e, dirPath) => {
+  try {
+    if (!fs.existsSync(dirPath) || !fs.statSync(dirPath).isDirectory()) return { error: 'not found' };
+    return { root: dirPath, name: path.basename(dirPath), tree: readTree(dirPath) };
+  } catch (err) {
+    return { error: String(err.message || err) };
+  }
+});
+
 ipcMain.handle('file:read', async (_e, filePath) => {
   try {
     return { content: fs.readFileSync(filePath, 'utf8') };

@@ -2,6 +2,7 @@ const { contextBridge, ipcRenderer } = require('electron');
 
 contextBridge.exposeInMainWorld('api', {
   openFolder: () => ipcRenderer.invoke('folder:open'),
+  openFolderPath: (p) => ipcRenderer.invoke('folder:openPath', p),
   readFile: (p) => ipcRenderer.invoke('file:read', p),
   readFileBinary: (p) => ipcRenderer.invoke('file:readBinary', p),
   setWatched: (paths) => ipcRenderer.send('watch:set', paths),
