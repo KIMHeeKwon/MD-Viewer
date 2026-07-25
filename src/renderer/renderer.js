@@ -825,6 +825,19 @@ async function openFolder() {
   saveSession();
 }
 
+// Finder/탐색기에서 더블클릭으로 열린 파일 — 폴더가 없으면 상위 폴더를 트리로 열고 탭 생성
+async function openExternalFile(p) {
+  if (!p) return;
+  if (!state.root) {
+    const dir = p.slice(0, p.lastIndexOf('/'));
+    if (dir) {
+      const res = await window.api.openFolderPath(dir);
+      if (res && !res.error) loadFolder(res);
+    }
+  }
+  await openFile(p);
+}
+
 /* ---------- 세션 저장 / 복원 ---------- */
 
 function saveSession() {
@@ -917,6 +930,8 @@ window.api.onMenu('menu:toggle-theme', toggleTheme);
 window.api.onMenu('menu:export-pdf', exportPdf);
 window.api.onMenu('menu:find', openFind);
 window.api.onMenu('menu:search-project', openSearch);
+
+window.api.onOpenFile(openExternalFile);
 
 // 마지막 세션(폴더 + 열린 탭) 복원
 restoreSession();

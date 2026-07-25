@@ -9,7 +9,21 @@ const isMac = process.platform === 'darwin';
 app.setName('MD Viewer'); // 개발 모드에서 메뉴 라벨 보정 (번들 이름은 패키징 시 productName 적용)
 
 let win = null;
+let windowReady = false;
+let pendingOpenPath = null; // 창이 준비되기 전에 들어온 파일 열기 요청 보관
 const watchers = new Map(); // path -> FSWatcher
+
+// Finder/탐색기에서 넘어온 파일 경로를 렌더러로 전달 (창이 준비된 뒤에만)
+function requestOpen(filePath) {
+  if (!filePath) return;
+  if (windowReady && win) win.webContents.send('open-file', filePath);
+  else pendingOpenPath = filePath;
+}
+
+// argv에서 실제 존재하는 마크다운 파일 경로를 추출 (Windows 더블클릭)
+function fileFromArgv(argv) {
+  return argv.find((a) => /\.(md|markdown|mdown)$/i.test(a) && fs.existsSync(a)) || null;
+}
 
 function readTree(dir, depth = 0) {
   if (depth > 8) return [];
@@ -51,8 +65,30 @@ function createWindow() {
     },
   });
   win.loadFile(path.join(__dirname, 'renderer', 'index.html'));
-  win.on('closed', () => { win = null; });
+  win.webContents.on('did-finish-load', () => {
+    windowReady = true;
+    if (pendingOpenPath) {
+      win.webContents.send('open-file', pendingOpenPath);
+      pendingOpenPath = null;
+    }
+  });
+  win.on('closed', () => { win = null; windowReady = false; });
 }
+
+// 단일 인스턴스 — 두 번째 실행(파일 더블클릭)은 첫 창으로 경로를 넘기고 종료
+const gotSingleInstanceLock = app.requestSingleInstanceLock();
+if (!gotSingleInstanceLock) app.quit();
+
+app.on('second-instance', (_e, argv) => {
+  requestOpen(fileFromArgv(argv));
+  if (win) { if (win.isMinimized()) win.restore(); win.focus(); }
+});
+
+// macOS: Finder에서 .md 더블클릭 / Dock에 드롭
+app.on('open-file', (event, filePath) => {
+  event.preventDefault();
+  requestOpen(filePath);
+});
 
 function buildMenu() {
   const template = [
@@ -215,8 +251,11 @@ ipcMain.on('watch:set', (_e, paths) => {
 });
 
 app.whenReady().then(() => {
+  if (!gotSingleInstanceLock) return;
   createWindow();
   buildMenu();
+  // Windows 첫 실행 시 argv로 넘어온 파일 열기 (macOS는 open-file 이벤트가 담당)
+  if (!isMac && !pendingOpenPath) requestOpen(fileFromArgv(process.argv));
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();
   });

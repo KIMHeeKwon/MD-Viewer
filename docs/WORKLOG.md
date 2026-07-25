@@ -1,5 +1,12 @@
 # WORKLOG — MD-Viewer-ALL
 
+## 2026-07-24 (v0.3.1 — Finder .md 더블클릭 연결)
+
+- **목표**: 운영체제 파일 연결로 .md 더블클릭 시 MD Viewer로 열기.
+- **산출물**: electron-builder `fileAssociations`(md/markdown/mdown) 등록 + main 프로세스 배관 — macOS `open-file` 이벤트, Windows argv/`second-instance`, `requestSingleInstanceLock`(중복 실행 방지), 창 준비 전 요청은 `pendingOpenPath`로 큐잉 후 did-finish-load에서 flush. 렌더러 `openExternalFile`: 폴더 미오픈 시 파일의 상위 폴더를 트리로 자동 오픈 후 탭 생성.
+- **현재 진행도**: 구현·번들·기동 무오류. 
+- **남은 미결(정직 보고)**: 파일 연결은 **설치된 빌드에서만** 활성화되어 dev 모드(`npx electron .`)로는 더블클릭 동작 검증 불가. v0.3.1 설치 후 사용자 확인 필요.
+
 ## 2026-07-24 (v0.3.0 — 기능 3종 자율 구현)
 
 - **목표**: 추천 우선순위대로 아웃라인 → 세션 복원 → 전체 검색을 사용자 추가 지시 없이 순차 구현 후 v0.3.0 릴리스.

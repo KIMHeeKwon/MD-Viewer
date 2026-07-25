@@ -9,6 +9,7 @@ contextBridge.exposeInMainWorld('api', {
   exportPdf: (suggestedName) => ipcRenderer.invoke('pdf:export', suggestedName),
   searchProject: (root, query) => ipcRenderer.invoke('search:project', { root, query }),
   onFileChanged: (cb) => ipcRenderer.on('file:changed', (_e, p) => cb(p)),
+  onOpenFile: (cb) => ipcRenderer.on('open-file', (_e, p) => cb(p)),
   onMenu: (channel, cb) => {
     if (channel === 'menu:open-folder' || channel === 'menu:toggle-theme' || channel === 'menu:export-pdf' || channel === 'menu:find' || channel === 'menu:search-project') {
       ipcRenderer.on(channel, () => cb());
