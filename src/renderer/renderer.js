@@ -667,12 +667,16 @@ function refreshFind() {
   runFind();
 }
 
-function openFind() {
+function openFind(preset) {
   findbar.hidden = false;
   const tab = activeTab();
   if (!(tab && tab.isPdf)) {
-    const sel = String(window.getSelection() || '').trim();
-    if (sel && sel.length <= 80) findInput.value = sel;
+    if (typeof preset === 'string' && preset) {
+      findInput.value = preset;
+    } else {
+      const sel = String(window.getSelection() || '').trim();
+      if (sel && sel.length <= 80) findInput.value = sel;
+    }
   }
   runFind();
   if (!findInput.disabled) { findInput.focus(); findInput.select(); }
@@ -693,6 +697,113 @@ findInput.addEventListener('keydown', (e) => {
 $('#find-next').addEventListener('click', () => setCurrentMatch(findState.current + 1));
 $('#find-prev').addEventListener('click', () => setCurrentMatch(findState.current - 1));
 $('#find-close').addEventListener('click', closeFind);
+
+/* ---------- 전체 검색 (⌘⇧F) ---------- */
+
+const searchPanel = $('#searchpanel');
+const spInput = $('#sp-input');
+const spSummary = $('#sp-summary');
+const spResults = $('#sp-results');
+let searchTimer = null;
+
+// text 안의 매치를 <mark>로 감싼 프래그먼트 (XSS 없이 DOM으로 구성)
+function highlightFragment(text, lowerQuery) {
+  const frag = document.createDocumentFragment();
+  const low = text.toLowerCase();
+  let from = 0;
+  let idx;
+  while ((idx = low.indexOf(lowerQuery, from)) !== -1) {
+    if (idx > from) frag.append(text.slice(from, idx));
+    const mark = document.createElement('mark');
+    mark.textContent = text.slice(idx, idx + lowerQuery.length);
+    frag.append(mark);
+    from = idx + lowerQuery.length;
+  }
+  if (from < text.length) frag.append(text.slice(from));
+  return frag;
+}
+
+function renderSearchResults(results, query, capped) {
+  spResults.textContent = '';
+  const lower = query.toLowerCase();
+  const fileCount = results.length;
+  const matchCount = results.reduce((n, r) => n + r.matches.length, 0);
+  spSummary.textContent = matchCount
+    ? `${matchCount}건 · ${fileCount}개 파일${capped ? ' (상한 도달)' : ''}`
+    : '결과 없음';
+  if (!matchCount) {
+    const empty = document.createElement('div');
+    empty.className = 'sp-empty';
+    empty.textContent = `"${query}"에 대한 결과가 없습니다.`;
+    spResults.append(empty);
+    return;
+  }
+  const frag = document.createDocumentFragment();
+  for (const r of results) {
+    const head = document.createElement('div');
+    head.className = 'sp-file';
+    const rel = state.root && r.path.startsWith(state.root) ? r.path.slice(state.root.length + 1) : r.path;
+    const dir = rel.slice(0, rel.length - r.name.length).replace(/\/$/, '');
+    head.innerHTML = `<span class="sp-name"></span><span class="sp-path"></span><span class="sp-count"></span>`;
+    head.querySelector('.sp-name').textContent = r.name;
+    head.querySelector('.sp-path').textContent = dir;
+    head.querySelector('.sp-count').textContent = `${r.matches.length}`;
+    frag.append(head);
+    for (const m of r.matches) {
+      const line = document.createElement('div');
+      line.className = 'sp-line';
+      const no = document.createElement('span');
+      no.className = 'sp-lineno';
+      no.textContent = m.line;
+      const txt = document.createElement('span');
+      txt.className = 'sp-linetext';
+      txt.append(highlightFragment(m.text, lower));
+      line.append(no, txt);
+      line.addEventListener('click', async () => {
+        closeSearch();
+        await openFile(r.path);
+        openFind(query); // 열린 문서에서 같은 검색어를 하이라이트하고 첫 매치로 이동
+      });
+      frag.append(line);
+    }
+  }
+  spResults.append(frag);
+}
+
+async function runSearch() {
+  const q = spInput.value.trim();
+  spResults.textContent = '';
+  if (!state.root) { spSummary.textContent = '폴더를 먼저 여세요'; return; }
+  if (q.length < 2) { spSummary.textContent = '두 글자 이상 입력'; return; }
+  spSummary.textContent = '검색 중…';
+  const { results, capped } = await window.api.searchProject(state.root, q);
+  if (q !== spInput.value.trim()) return; // 입력이 바뀌었으면 이 결과는 버림
+  renderSearchResults(results, q, capped);
+}
+
+function openSearch() {
+  searchPanel.hidden = false;
+  const sel = String(window.getSelection() || '').trim();
+  if (sel && sel.length <= 80) spInput.value = sel;
+  spInput.focus();
+  spInput.select();
+  if (spInput.value.trim().length >= 2) runSearch();
+  else spSummary.textContent = state.root ? '두 글자 이상 입력' : '폴더를 먼저 여세요';
+}
+
+function closeSearch() {
+  searchPanel.hidden = true;
+}
+
+spInput.addEventListener('input', () => {
+  clearTimeout(searchTimer);
+  searchTimer = setTimeout(runSearch, 250);
+});
+spInput.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') { clearTimeout(searchTimer); runSearch(); }
+  else if (e.key === 'Escape') { e.preventDefault(); closeSearch(); }
+});
+$('#sp-close').addEventListener('click', closeSearch);
 
 /* ---------- 폴더 열기 / 파일 감시 ---------- */
 
@@ -805,6 +916,7 @@ window.api.onMenu('menu:open-folder', openFolder);
 window.api.onMenu('menu:toggle-theme', toggleTheme);
 window.api.onMenu('menu:export-pdf', exportPdf);
 window.api.onMenu('menu:find', openFind);
+window.api.onMenu('menu:search-project', openSearch);
 
 // 마지막 세션(폴더 + 열린 탭) 복원
 restoreSession();

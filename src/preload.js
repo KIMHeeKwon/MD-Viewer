@@ -7,9 +7,10 @@ contextBridge.exposeInMainWorld('api', {
   readFileBinary: (p) => ipcRenderer.invoke('file:readBinary', p),
   setWatched: (paths) => ipcRenderer.send('watch:set', paths),
   exportPdf: (suggestedName) => ipcRenderer.invoke('pdf:export', suggestedName),
+  searchProject: (root, query) => ipcRenderer.invoke('search:project', { root, query }),
   onFileChanged: (cb) => ipcRenderer.on('file:changed', (_e, p) => cb(p)),
   onMenu: (channel, cb) => {
-    if (channel === 'menu:open-folder' || channel === 'menu:toggle-theme' || channel === 'menu:export-pdf' || channel === 'menu:find') {
+    if (channel === 'menu:open-folder' || channel === 'menu:toggle-theme' || channel === 'menu:export-pdf' || channel === 'menu:find' || channel === 'menu:search-project') {
       ipcRenderer.on(channel, () => cb());
     }
   },

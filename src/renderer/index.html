@@ -26,6 +26,14 @@
           <p class="empty-title">MD Viewer</p>
           <p class="empty-hint">폴더를 열어 마크다운 문서를 탐색하세요 (⌘O)</p>
         </div>
+        <div id="searchpanel" hidden>
+          <div class="sp-head">
+            <input id="sp-input" type="text" placeholder="전체 검색 (폴더 내 .md)" spellcheck="false" autocomplete="off">
+            <span id="sp-summary"></span>
+            <button id="sp-close" title="닫기 (Esc)">×</button>
+          </div>
+          <div id="sp-results"></div>
+        </div>
         <div id="findbar" hidden>
           <input id="find-input" type="text" placeholder="찾기" spellcheck="false" autocomplete="off">
           <span id="find-count">0/0</span>
