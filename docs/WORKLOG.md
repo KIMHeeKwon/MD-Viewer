@@ -1,5 +1,15 @@
 # WORKLOG — MD-Viewer-ALL
 
+## 2026-07-25 (v0.3.3 — 설치본 렌더러 누락 긴급 수정 + 앱 아이콘)
+
+- **긴급 버그**: 설치본 실행 시 GUI·기능 전무(뼈대 HTML만). 진단 결과 app.asar(199KB)에 renderer-dist 누락 → index.html의 renderer.{js,css} 404.
+  - 원인: release.yml이 electron-builder 전에 `npm run bundle`을 실행하지 않음. renderer-dist는 gitignore라 CI에 미존재 → 패키지에서 통째 누락. v0.1.0~v0.3.2 전부 동일 결함(dev 실행에만 의존해 6개 릴리스 동안 미발견).
+  - 조치: release.yml에 "Build renderer" 단계 추가. 로컬 `npm run dist`로 asar 8.3MB·renderer-dist 64항목 포함 검증. FAILURES.md Active Rule 2 승격.
+- **앱 아이콘**: 사용자 제공 이미지(design/icon-source.png, MD|PDF 문서 + 네이비 라운드 사각형)를 PIL flood-fill로 흰 여백 투명화 → 1024 마스터 → icns(iconutil)/ico 생성, electron-builder mac.icon/win.icon 연결. 패키지 Info.plist CFBundleIconFile=icon.icns 검증.
+- **README(한/영)**: macOS "손상되었다" 경고 해결법(우클릭 열기 / `xattr -dr com.apple.quarantine`) 및 Windows SmartScreen 안내 추가.
+- **환경 이슈**: 작업 중 macOS TCC 권한이 회수되어 ~/Documents 접근이 차단됨 → 사용자가 전체 디스크 접근 권한 부여 + 앱 재시작으로 복구.
+
+
 ## 2026-07-24 (v0.3.2 — 트리↔개요 세로 분할 리사이저)
 
 - **목표**: 사용자 요청 — "md 파일 목록창 리사이징". 질문으로 의도 확인 → **트리 ↔ 개요 세로 분할** 조절(좌우 폭은 이미 존재).

@@ -29,7 +29,18 @@ GitHub Flavored Markdown에 수식(KaTeX) · 다이어그램(Mermaid) · 코드 
 | macOS (Apple Silicon) | `MD-Viewer-<버전>-arm64.dmg` |
 | Windows | `MD-Viewer-Setup-<버전>.exe` |
 
-> macOS 빌드는 코드 서명이 없어 처음 열 때 Gatekeeper 경고가 나옵니다. **우클릭 → 열기**로 실행하세요.
+### 처음 실행 시 경고 해결 (macOS)
+
+이 앱은 Apple 코드 서명·공증이 없어, 처음 실행할 때 macOS가 경고를 띄웁니다. 앱이 손상된 것이 아니라 인터넷에서 받은 파일에 붙는 **격리(quarantine) 속성** 때문입니다.
+
+- **"확인되지 않은 개발자" 경고**: 앱을 **우클릭 → 열기** → 대화상자에서 **열기**. (한 번만 하면 이후엔 그냥 열림)
+- **"손상되었으므로 휴지통으로 이동" 경고**: 아래 명령으로 격리 속성을 제거한 뒤 실행합니다.
+
+```bash
+xattr -dr com.apple.quarantine "/Applications/MD Viewer.app"
+```
+
+Windows에서는 SmartScreen이 "Windows의 PC 보호" 창을 띄울 수 있습니다 → **추가 정보 → 실행**을 누르면 됩니다.
 
 ## 단축키
 

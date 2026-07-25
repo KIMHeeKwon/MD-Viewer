@@ -29,7 +29,18 @@ Download the file for your platform from [Releases](https://github.com/KIMHeeKwo
 | macOS (Apple Silicon) | `MD-Viewer-<version>-arm64.dmg` |
 | Windows | `MD-Viewer-Setup-<version>.exe` |
 
-> The macOS build is unsigned, so you'll see a Gatekeeper warning on first launch. Use **right-click → Open** to run it.
+### First-launch warnings (macOS)
+
+This app is not signed/notarized by Apple, so macOS shows a warning on first launch. The app is not actually damaged — it's the **quarantine attribute** that macOS attaches to files downloaded from the internet.
+
+- **"unidentified developer" warning**: **right-click → Open** → click **Open** in the dialog. (Only needed once.)
+- **"damaged and can't be opened, move to Trash" warning**: remove the quarantine attribute, then launch:
+
+```bash
+xattr -dr com.apple.quarantine "/Applications/MD Viewer.app"
+```
+
+On Windows, SmartScreen may show a "Windows protected your PC" dialog → click **More info → Run anyway**.
 
 ## Keyboard shortcuts
 

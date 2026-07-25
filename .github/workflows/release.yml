@@ -35,6 +35,11 @@ jobs:
       - name: Install
         run: npm ci
 
+      # 렌더러 번들 생성 — 이 단계가 없으면 renderer-dist가 패키지에서 누락되어
+      # 설치본이 스타일·스크립트 없이 뼈대 HTML만 표시된다 (FAILURES.md)
+      - name: Build renderer
+        run: npm run bundle
+
       - name: Package & publish to GitHub Release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

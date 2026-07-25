@@ -9,6 +9,14 @@
    release.yml의 create-release 잡이 먼저 릴리스를 만들고 package 잡은 `needs`로 대기한다.
    `build.publish.releaseType: "release"`는 기존 릴리스를 태그로 찾게 하기 위해 유지.
 
+## Active Rules (계속)
+
+2. **릴리스 워크플로는 electron-builder 전에 반드시 `npm run bundle`을 실행한다.**
+   `renderer-dist/`는 gitignore 대상이라 CI 체크아웃에 존재하지 않는다. 번들 단계 없이
+   패키징하면 `files` 글롭의 `renderer-dist/**/*`가 빈 것을 잡아, 설치본이 스타일·스크립트
+   없이 뼈대 HTML만 표시된다. dev 실행(`npm start`)은 bundle을 포함하므로 이 결함이
+   가려진다 — **패키징 산출물은 반드시 설치·실행까지 검증**할 것(asar에 renderer-dist 포함 확인).
+
 ## 사례 기록
 
 ### 2026-07-24 — v0.1.0 릴리스 드래프트 분열
@@ -24,6 +32,16 @@
 - **검증 완료 (v0.2.1)**: 선행 잡 구조로 단일 릴리스에 자산 8개가 정상 집결. 경합 종결.
   잔여 특이점: zip 블록맵 자산명이 `MD.Viewer-...`로 보이는 것은 productName의 공백을
   GitHub가 점으로 치환한 것 — 무해 (자동 업데이트 델타용 파일).
+
+### 2026-07-25 — 설치본에서 GUI·기능 전무 (renderer-dist 누락)
+- 증상: v0.3.2 설치본 실행 시 스타일·스크립트 없이 뼈대 HTML만 표시. 그동안의 기능이 하나도 안 보임.
+- 진단: 설치 앱의 app.asar(199KB, 정상은 ~8MB)에 `renderer-dist/`가 없음. index.html이
+  참조하는 `../../renderer-dist/renderer.{js,css}`가 404 → 무스타일·무기능.
+- 원인: release.yml이 `npm ci` 후 곧바로 electron-builder 실행, `npm run bundle` 누락.
+  renderer-dist는 gitignore라 CI에 미존재 → 패키지에서 통째 누락. v0.1.0~v0.3.2 전부 동일.
+  dev 실행(`npm start`)에만 의존해 검증한 탓에 6개 릴리스 동안 미발견.
+- 조치: release.yml에 "Build renderer" 단계 추가. 로컬 `npm run dist`로 asar에 renderer-dist
+  포함(8.3MB) 검증 후 v0.3.3 재릴리스. Active Rule 2 승격.
 
 ## 프로토콜 우회 로그
 
