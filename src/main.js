@@ -130,6 +130,18 @@ function buildMenu() {
           click: () => win && win.webContents.send('menu:search-project'),
         },
         {
+          label: '본문 글자 크기',
+          submenu: [
+            { label: '작게', click: () => win && win.webContents.send('menu:font-size', 13) },
+            { label: '보통', click: () => win && win.webContents.send('menu:font-size', 15) },
+            { label: '크게', click: () => win && win.webContents.send('menu:font-size', 17) },
+            { label: '아주 크게', click: () => win && win.webContents.send('menu:font-size', 20) },
+            { type: 'separator' },
+            { label: '한 단계 크게', accelerator: 'CmdOrCtrl+Alt+Plus', click: () => win && win.webContents.send('menu:font-size', '+') },
+            { label: '한 단계 작게', accelerator: 'CmdOrCtrl+Alt+-', click: () => win && win.webContents.send('menu:font-size', '-') },
+          ],
+        },
+        {
           label: '읽기 폭',
           submenu: [
             { label: '좁게', click: () => win && win.webContents.send('menu:read-width', 720) },

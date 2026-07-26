@@ -1184,6 +1184,30 @@ function applyReadWidth(px) {
 applyReadWidth(Number(localStorage.getItem('readWidth') ?? 860));
 window.api.onMenu('menu:read-width', applyReadWidth);
 
+/* ---------- 본문 글자 크기 ---------- */
+
+const FONT_MIN = 11;
+const FONT_MAX = 26;
+let docFontSize = Number(localStorage.getItem('docFontSize')) || 15;
+
+// 숫자면 그 크기로, '+'/'-'면 한 단계(1px) 증감
+function applyFontSize(v) {
+  const next = v === '+' ? docFontSize + 1 : v === '-' ? docFontSize - 1 : Number(v);
+  docFontSize = Math.max(FONT_MIN, Math.min(FONT_MAX, next || 15));
+  document.documentElement.style.setProperty('--doc-font-size', `${docFontSize}px`);
+  localStorage.setItem('docFontSize', String(docFontSize));
+  $('#st-font').textContent = `${docFontSize}px`;
+}
+applyFontSize(docFontSize);
+window.api.onMenu('menu:font-size', applyFontSize);
+
+// 상태 바 버튼 — 클릭하면 미리 정한 크기를 순환
+const FONT_STEPS = [13, 15, 17, 20];
+$('#st-font').addEventListener('click', () => {
+  const i = FONT_STEPS.indexOf(docFontSize);
+  applyFontSize(FONT_STEPS[(i + 1) % FONT_STEPS.length]);
+});
+
 window.api.onOpenFile(openExternalFile);
 
 /* ---------- 드래그앤드롭으로 열기 ---------- */

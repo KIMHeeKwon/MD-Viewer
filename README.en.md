@@ -15,6 +15,7 @@ Supports GitHub Flavored Markdown plus math (KaTeX), diagrams (Mermaid), syntax 
 - **Drag and drop** — Drop a file or folder onto the window to open it
 - **Find in document (⌘F)** — Match highlighting, match count, previous/next navigation, with **regex** and **case-sensitive** options; **works in PDFs too**
 - **Reading width** — Choose narrow / normal / wide / full from the View menu (remembered)
+- **Body text size** — Scales headings, tables, and code proportionally. Adjust from the View menu, the status bar, or `⌘⌥+` / `⌘⌥-` (UI stays the same size)
 - **Project-wide search (⌘⇧F)** — Search across all Markdown files in the folder; click a result to jump to that document
 - **Session restore** — Reopens the last folder and open tabs on the next launch
 - **File association** — Double-click a `.md` file in Finder/Explorer to open it in MD Viewer (active after install)
@@ -56,7 +57,8 @@ On Windows, SmartScreen may show a "Windows protected your PC" dialog → click 
 | Export to PDF | ⌘E |
 | Export to HTML | ⌘⇧E |
 | Toggle theme | ⌘⇧L |
-| Zoom in / out | ⌘+ / ⌘− |
+| Body text larger / smaller | ⌘⌥+ / ⌘⌥− |
+| Zoom whole UI in / out | ⌘+ / ⌘− |
 
 ## Development
 

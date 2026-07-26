@@ -18,6 +18,7 @@ contextBridge.exposeInMainWorld('api', {
     const allowed = [
       'menu:open-folder', 'menu:toggle-theme', 'menu:export-pdf',
       'menu:find', 'menu:search-project', 'menu:read-width', 'menu:export-html',
+      'menu:font-size',
     ];
     if (allowed.includes(channel)) {
       ipcRenderer.on(channel, (_e, ...args) => cb(...args));

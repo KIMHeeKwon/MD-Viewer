@@ -264,16 +264,16 @@ body.resizing { cursor: col-resize; user-select: none; }
   max-width: var(--read-width, 860px);
   margin: 0 auto;
   padding: 40px;
-  font-size: 15px;
+  font-size: var(--doc-font-size, 15px);
   line-height: 1.75;
 }
 .doc-body > *:first-child { margin-top: 0; }
 .doc-body h1, .doc-body h2, .doc-body h3,
 .doc-body h4, .doc-body h5, .doc-body h6 { scroll-margin-top: 12px; }
-.doc-body h1 { font-size: 28px; font-weight: 700; line-height: 1.3; margin: 28px 0 12px; }
-.doc-body h2 { font-size: 21px; font-weight: 650; margin: 26px 0 10px; padding-bottom: 6px; border-bottom: 1px solid var(--soft); }
-.doc-body h3 { font-size: 17px; margin: 20px 0 8px; }
-.doc-body h4, .doc-body h5, .doc-body h6 { font-size: 15px; margin: 16px 0 6px; }
+.doc-body h1 { font-size: 1.867em; font-weight: 700; line-height: 1.3; margin: 28px 0 12px; }
+.doc-body h2 { font-size: 1.4em; font-weight: 650; margin: 26px 0 10px; padding-bottom: 6px; border-bottom: 1px solid var(--soft); }
+.doc-body h3 { font-size: 1.133em; margin: 20px 0 8px; }
+.doc-body h4, .doc-body h5, .doc-body h6 { font-size: 1em; margin: 16px 0 6px; }
 .doc-body p { margin: 0 0 12px; }
 .doc-body a { color: var(--accent); text-decoration: none; }
 .doc-body a:hover { text-decoration: underline; }
@@ -291,14 +291,14 @@ body.resizing { cursor: col-resize; user-select: none; }
 
 /* 표 */
 .doc-body .table-wrap { overflow-x: auto; margin: 12px 0; }
-.doc-body table { border-collapse: collapse; font-size: 13.5px; }
+.doc-body table { border-collapse: collapse; font-size: 0.9em; }
 .doc-body th, .doc-body td { border: 1px solid var(--soft); padding: 6px 14px; }
 .doc-body th { background: var(--soft); font-weight: 650; }
 
 /* 코드 */
 .doc-body code {
   font-family: "JetBrains Mono", "SF Mono", "Cascadia Code", Consolas, monospace;
-  font-size: 13px;
+  font-size: 0.867em;
   background: var(--soft);
   padding: 2px 6px;
   border-radius: 4px;
@@ -324,7 +324,7 @@ body.resizing { cursor: col-resize; user-select: none; }
   color: var(--fg);
 }
 .doc-body .callout p:last-child { margin-bottom: 0; }
-.callout-title { font-weight: 700; color: var(--accent); font-size: 12.5px; letter-spacing: .04em; margin-bottom: 4px; }
+.callout-title { font-weight: 700; color: var(--accent); font-size: 0.833em; letter-spacing: .04em; margin-bottom: 4px; }
 .callout-warning, .callout-caution { border-left-color: #e0af68; }
 .callout-warning .callout-title, .callout-caution .callout-title { color: #e0af68; }
 .callout-important, .callout-danger, .callout-error { border-left-color: #f7768e; }
@@ -345,7 +345,7 @@ body.resizing { cursor: col-resize; user-select: none; }
 
 /* 각주 */
 .doc-body .footnotes-sep { margin-top: 32px; }
-.doc-body .footnotes { font-size: 13px; color: var(--dim); }
+.doc-body .footnotes { font-size: 0.867em; color: var(--dim); }
 
 /* ---- 상태 바 ---- */
 #statusbar {
@@ -363,7 +363,7 @@ body.resizing { cursor: col-resize; user-select: none; }
 }
 #st-path { overflow: hidden; text-overflow: ellipsis; }
 .st-right { display: flex; gap: 16px; align-items: center; }
-#btn-theme {
+#btn-theme, #st-font {
   border: none;
   background: none;
   color: var(--status-fg);
@@ -371,6 +371,12 @@ body.resizing { cursor: col-resize; user-select: none; }
   font-size: 13px;
   padding: 0 2px;
 }
+#st-font {
+  font-family: inherit;
+  font-size: 11.5px;
+  opacity: .9;
+}
+#st-font:hover { opacity: 1; text-decoration: underline; }
 
 /* PDF 열람 — PDF.js 렌더링, 앱 테마에 통합 */
 .pdf-scroll {
