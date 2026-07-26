@@ -18,7 +18,8 @@ Supports GitHub Flavored Markdown plus math (KaTeX), diagrams (Mermaid), syntax 
 - **Project-wide search (⌘⇧F)** — Search across all Markdown files in the folder; click a result to jump to that document
 - **Session restore** — Reopens the last folder and open tabs on the next launch
 - **File association** — Double-click a `.md` file in Finder/Explorer to open it in MD Viewer (active after install)
-- **PDF** — View PDF files (integrated into the app theme, with page navigation, zoom, and **text selection & search**) and export Markdown to PDF (⌘E, always output in light theme)
+- **PDF** — View PDF files (integrated into the app theme, with page navigation, zoom, and text selection & search) and export Markdown to PDF (⌘E, always output in light theme)
+- **HTML export (⌘⇧E)** — A **single self-contained HTML file** with styles, math fonts, and images embedded; opens identically in any browser, offline
 - **File watching** — Automatically re-renders when a document is saved from an external editor (VS Code, Obsidian, etc.)
 - **Dark / light theme** (⌘⇧L)
 - **Fully offline** — Fonts and scripts are all bundled; no network requests
@@ -53,6 +54,7 @@ On Windows, SmartScreen may show a "Windows protected your PC" dialog → click 
 | Find in document | ⌘F |
 | Project-wide search | ⌘⇧F |
 | Export to PDF | ⌘E |
+| Export to HTML | ⌘⇧E |
 | Toggle theme | ⌘⇧L |
 | Zoom in / out | ⌘+ / ⌘− |
 

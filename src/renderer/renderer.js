@@ -467,6 +467,38 @@ async function exportPdf() {
   }
 }
 
+async function exportHtml() {
+  const tab = state.tabs.find((t) => t.path === state.active);
+  if (!tab || tab.isPdf) return;
+  const base = tab.name.replace(/\.(md|markdown|mdown)$/i, '');
+
+  // 내보낸 문서는 라이트 테마로 보이므로 Mermaid도 라이트로 다시 그린 뒤 복원한다
+  const wasDark = state.theme === 'dark';
+  const scroll = tab.pane.scrollTop;
+  if (wasDark) {
+    mermaid.initialize({ startOnLoad: false, theme: 'default', securityLevel: 'strict' });
+    await renderInto(tab.pane, tab.source, tab.dir);
+  }
+
+  const body = tab.pane.querySelector('.doc-body');
+  const clone = body.cloneNode(true);
+  for (const m of clone.querySelectorAll('mark.find-hl')) { // 검색 하이라이트는 제외
+    m.replaceWith(...m.childNodes);
+  }
+  await window.api.exportHtml({
+    suggestedName: `${base}.html`,
+    title: base,
+    bodyHtml: clone.innerHTML,
+  });
+
+  if (wasDark) {
+    mermaid.initialize({ startOnLoad: false, theme: 'dark', securityLevel: 'strict' });
+    await renderInto(tab.pane, tab.source, tab.dir);
+    tab.pane.scrollTop = scroll;
+    refreshFind();
+  }
+}
+
 /* ---------- 상태 바 ---------- */
 
 function updateStatus() {
@@ -1138,6 +1170,7 @@ $('#btn-theme').addEventListener('click', toggleTheme);
 window.api.onMenu('menu:open-folder', openFolder);
 window.api.onMenu('menu:toggle-theme', toggleTheme);
 window.api.onMenu('menu:export-pdf', exportPdf);
+window.api.onMenu('menu:export-html', exportHtml);
 window.api.onMenu('menu:find', openFind);
 window.api.onMenu('menu:search-project', openSearch);
 

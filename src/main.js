@@ -106,6 +106,11 @@ function buildMenu() {
           accelerator: 'CmdOrCtrl+E',
           click: () => win && win.webContents.send('menu:export-pdf'),
         },
+        {
+          label: 'HTML로 내보내기…',
+          accelerator: 'CmdOrCtrl+Shift+E',
+          click: () => win && win.webContents.send('menu:export-html'),
+        },
         { type: 'separator' },
         isMac ? { role: 'close' } : { role: 'quit' },
       ],
@@ -264,6 +269,76 @@ ipcMain.handle('links:backlinks', async (_e, { root, target }) => {
     if (matches.length) results.push({ path: f, name: path.basename(f), matches });
   }
   return { results };
+});
+
+// 렌더링 결과를 자체 완결 HTML 한 파일로 저장 (스타일·수식 폰트·이미지 내장)
+ipcMain.handle('html:export', async (_e, { suggestedName, title, bodyHtml }) => {
+  const res = await dialog.showSaveDialog(win, {
+    defaultPath: suggestedName,
+    filters: [{ name: 'HTML', extensions: ['html'] }],
+  });
+  if (res.canceled || !res.filePath) return null;
+
+  const distDir = path.join(__dirname, '..', 'renderer-dist');
+  const MIME = {
+    '.woff2': 'font/woff2', '.woff': 'font/woff', '.ttf': 'font/ttf',
+    '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg',
+    '.gif': 'image/gif', '.svg': 'image/svg+xml', '.webp': 'image/webp',
+  };
+  const dataUri = (file) => {
+    const ext = path.extname(file).toLowerCase();
+    return `data:${MIME[ext] || 'application/octet-stream'};base64,${fs.readFileSync(file).toString('base64')}`;
+  };
+
+  try {
+    let css = fs.readFileSync(path.join(distDir, 'renderer.css'), 'utf8');
+    // @font-face의 src를 내장한 woff2 하나로 교체한다.
+    // (수식이 없으면 폰트를 통째로 빼고, ttf/woff 대체본은 깨진 참조로 남지 않게 제거)
+    const needsMath = bodyHtml.includes('katex');
+    css = css.replace(/@font-face\s*\{([^}]*)\}/g, (block, inner) => {
+      if (!needsMath) return '';
+      const refs = [...inner.matchAll(/url\(["']?([^"')]+)["']?\)/g)].map((m) => m[1]);
+      const woff2 = refs.map((r) => path.join(distDir, path.basename(r.split('?')[0])))
+        .find((f) => f.toLowerCase().endsWith('.woff2') && fs.existsSync(f));
+      if (!woff2) return '';
+      const src = `src:url("${dataUri(woff2)}") format("woff2");`;
+      return `@font-face{${inner.replace(/src\s*:[^;]*;?/g, '')}${src}}`;
+    });
+
+    // 문서 이미지도 내장 (파일당 5MB 상한)
+    const body = bodyHtml.replace(/src="file:\/\/([^"]+)"/g, (whole, p) => {
+      try {
+        const f = decodeURI(p);
+        if (!fs.existsSync(f) || fs.statSync(f).size > 5 * 1024 * 1024) return whole;
+        return `src="${dataUri(f)}"`;
+      } catch { return whole; }
+    });
+
+    const esc = (s) => s.replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
+    const html = `<!doctype html>
+<html lang="ko" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>${esc(title)}</title>
+<style>
+${css}
+body { padding: 32px 20px; }
+.doc-body { margin: 0 auto; }
+.wikilink { border-bottom: 1px dashed currentColor; }
+</style>
+</head>
+<body>
+<article class="doc-body">
+${body}
+</article>
+</body>
+</html>`;
+    fs.writeFileSync(res.filePath, html, 'utf8');
+    return res.filePath;
+  } catch (err) {
+    return { error: String(err.message || err) };
+  }
 });
 
 ipcMain.handle('pdf:export', async (_e, suggestedName) => {

@@ -7,6 +7,7 @@ contextBridge.exposeInMainWorld('api', {
   readFileBinary: (p) => ipcRenderer.invoke('file:readBinary', p),
   setWatched: (paths) => ipcRenderer.send('watch:set', paths),
   exportPdf: (suggestedName) => ipcRenderer.invoke('pdf:export', suggestedName),
+  exportHtml: (payload) => ipcRenderer.invoke('html:export', payload),
   searchProject: (root, query) => ipcRenderer.invoke('search:project', { root, query }),
   getBacklinks: (root, target) => ipcRenderer.invoke('links:backlinks', { root, target }),
   // 드롭된 File 객체의 실제 경로 (Electron 32+에서 File.path가 제거됨)
@@ -16,7 +17,7 @@ contextBridge.exposeInMainWorld('api', {
   onMenu: (channel, cb) => {
     const allowed = [
       'menu:open-folder', 'menu:toggle-theme', 'menu:export-pdf',
-      'menu:find', 'menu:search-project', 'menu:read-width',
+      'menu:find', 'menu:search-project', 'menu:read-width', 'menu:export-html',
     ];
     if (allowed.includes(channel)) {
       ipcRenderer.on(channel, (_e, ...args) => cb(...args));
