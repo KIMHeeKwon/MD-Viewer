@@ -365,6 +365,7 @@ function activateTab(path) {
   updateStatus();
   refreshFind();
   refreshOutline();
+  refreshBacklinks();
   saveSession();
 }
 
@@ -479,6 +480,7 @@ async function toggleTheme() {
   }
   refreshFind();
   refreshOutline();
+  refreshBacklinks();
 }
 
 /* ---------- 개요(아웃라인) 패널 ---------- */
@@ -503,12 +505,20 @@ function refreshOutline() {
   const body = tab && !tab.isPdf ? tab.pane.querySelector('.doc-body') : null;
   outlineEl.textContent = '';
   const headings = body ? [...body.querySelectorAll('h1, h2, h3, h4, h5, h6')] : [];
-  if (!headings.length) {
+  // 마크다운 문서가 열려 있으면 헤딩이 없어도 패널을 띄운다 (백링크 탭 접근용)
+  if (!body) {
     sidebarEl.classList.remove('has-outline');
     return;
   }
   sidebarEl.classList.add('has-outline');
   if (outlineHeight >= OUTLINE_MIN) applyOutlineHeight(outlineHeight); // 저장된 분할 높이 유지
+  if (!headings.length) {
+    const note = document.createElement('div');
+    note.className = 'bl-empty';
+    note.textContent = '헤딩이 없는 문서입니다.';
+    outlineEl.append(note);
+    return;
+  }
   const frag = document.createDocumentFragment();
   for (const h of headings) {
     const level = Number(h.tagName[1]);
@@ -546,6 +556,85 @@ outlineHead.addEventListener('click', () => {
   outlineHead.querySelector('.outline-caret').textContent =
     sidebarEl.classList.contains('outline-collapsed') ? '▸' : '▾';
 });
+
+/* ---------- 백링크 패널 ---------- */
+
+const backlinksEl = $('#backlinks');
+const blBadge = $('#bl-badge');
+const tabOutline = $('#panel-tab-outline');
+const tabBacklinks = $('#panel-tab-backlinks');
+let panelView = 'outline';
+
+function setPanelView(view) {
+  panelView = view;
+  const isOutline = view === 'outline';
+  tabOutline.classList.toggle('active', isOutline);
+  tabBacklinks.classList.toggle('active', !isOutline);
+  outlineEl.hidden = !isOutline;
+  backlinksEl.hidden = isOutline;
+  if (!isOutline) refreshBacklinks();
+}
+
+// 탭 클릭은 패널 접기(헤더 클릭)와 겹치지 않게 전파를 막는다
+for (const [el, view] of [[tabOutline, 'outline'], [tabBacklinks, 'backlinks']]) {
+  el.addEventListener('click', (e) => {
+    e.stopPropagation();
+    sidebarEl.classList.remove('outline-collapsed');
+    outlineHead.querySelector('.outline-caret').textContent = '▾';
+    setPanelView(view);
+  });
+}
+
+async function refreshBacklinks() {
+  const tab = activeTab();
+  blBadge.textContent = '';
+  if (panelView !== 'backlinks') return;
+  backlinksEl.textContent = '';
+  if (!tab || tab.isPdf || !state.root) {
+    const note = document.createElement('div');
+    note.className = 'bl-empty';
+    note.textContent = tab && tab.isPdf ? 'PDF는 백링크를 지원하지 않습니다.' : '마크다운 문서를 여세요.';
+    backlinksEl.append(note);
+    return;
+  }
+  const loading = document.createElement('div');
+  loading.className = 'bl-empty';
+  loading.textContent = '찾는 중…';
+  backlinksEl.append(loading);
+
+  const targetPath = tab.path;
+  const { results } = await window.api.getBacklinks(state.root, targetPath);
+  if (state.active !== targetPath || panelView !== 'backlinks') return; // 그 사이 탭이 바뀌면 폐기
+
+  backlinksEl.textContent = '';
+  const total = results.reduce((n, r) => n + r.matches.length, 0);
+  blBadge.textContent = total ? ` ${total}` : '';
+  if (!total) {
+    const note = document.createElement('div');
+    note.className = 'bl-empty';
+    note.textContent = `이 문서를 [[${tab.name.replace(/\.(md|markdown|mdown)$/i, '')}]]로 참조하는 문서가 없습니다.`;
+    backlinksEl.append(note);
+    return;
+  }
+  const frag = document.createDocumentFragment();
+  for (const r of results) {
+    const head = document.createElement('div');
+    head.className = 'bl-file';
+    head.textContent = r.name;
+    head.title = r.path;
+    head.addEventListener('click', () => openFile(r.path));
+    frag.append(head);
+    for (const m of r.matches) {
+      const line = document.createElement('div');
+      line.className = 'bl-line';
+      line.textContent = m.text;
+      line.title = `${r.name}:${m.line}`;
+      line.addEventListener('click', () => openFile(r.path));
+      frag.append(line);
+    }
+  }
+  backlinksEl.append(frag);
+}
 
 // 트리 ↔ 개요 세로 분할 리사이저
 outlineResizer.addEventListener('mousedown', (e) => {
@@ -912,7 +1001,7 @@ window.api.onFileChanged(async (path) => {
   const scroll = tab.pane.scrollTop;
   await renderInto(tab.pane, tab.source, tab.dir);
   tab.pane.scrollTop = scroll;
-  if (tab.path === state.active) { updateStatus(); refreshFind(); refreshOutline(); }
+  if (tab.path === state.active) { updateStatus(); refreshFind(); refreshOutline(); refreshBacklinks(); }
 });
 
 /* ---------- 이벤트 결선 ---------- */
@@ -965,6 +1054,49 @@ window.api.onMenu('menu:find', openFind);
 window.api.onMenu('menu:search-project', openSearch);
 
 window.api.onOpenFile(openExternalFile);
+
+/* ---------- 드래그앤드롭으로 열기 ---------- */
+
+const dropOverlay = $('#drop-overlay');
+let dragDepth = 0; // 자식 요소를 지날 때 발생하는 dragleave로 오버레이가 깜빡이지 않게 카운트
+
+function hasFiles(e) {
+  return [...(e.dataTransfer?.types || [])].includes('Files');
+}
+
+window.addEventListener('dragenter', (e) => {
+  if (!hasFiles(e)) return;
+  e.preventDefault();
+  dragDepth++;
+  dropOverlay.hidden = false;
+});
+window.addEventListener('dragover', (e) => {
+  if (!hasFiles(e)) return;
+  e.preventDefault();
+  e.dataTransfer.dropEffect = 'copy';
+});
+window.addEventListener('dragleave', (e) => {
+  if (!hasFiles(e)) return;
+  dragDepth = Math.max(0, dragDepth - 1);
+  if (!dragDepth) dropOverlay.hidden = true;
+});
+window.addEventListener('drop', async (e) => {
+  if (!hasFiles(e)) return;
+  e.preventDefault();
+  dragDepth = 0;
+  dropOverlay.hidden = true;
+
+  const paths = [...e.dataTransfer.files].map((f) => window.api.pathForFile(f)).filter(Boolean);
+  for (const p of paths) {
+    if (/\.(md|markdown|mdown|pdf)$/i.test(p)) {
+      await openExternalFile(p);
+    } else {
+      // 확장자가 없으면 폴더로 간주하고 열어본다
+      const res = await window.api.openFolderPath(p);
+      if (res && !res.error) { loadFolder(res); saveSession(); }
+    }
+  }
+});
 
 // 마지막 세션(폴더 + 열린 탭) 복원
 restoreSession();

@@ -217,6 +217,46 @@ ipcMain.handle('search:project', async (_e, { root, query }) => {
   return { results, capped: total >= MAX_TOTAL };
 });
 
+// 이 문서를 [[위키링크]]로 참조하는 다른 문서 찾기 (백링크)
+ipcMain.handle('links:backlinks', async (_e, { root, target }) => {
+  if (!root || !target) return { results: [] };
+  const targetKey = path.basename(target).replace(/\.(md|markdown|mdown)$/i, '').toLowerCase();
+
+  const files = [];
+  (function walk(dir, depth) {
+    if (depth > 8) return;
+    let entries;
+    try { entries = fs.readdirSync(dir, { withFileTypes: true }); } catch { return; }
+    for (const e of entries) {
+      if (e.name.startsWith('.') || e.name === 'node_modules') continue;
+      const full = path.join(dir, e.name);
+      if (e.isDirectory()) walk(full, depth + 1);
+      else if (/\.(md|markdown|mdown)$/i.test(e.name)) files.push(full);
+    }
+  })(root, 0);
+
+  const results = [];
+  for (const f of files) {
+    if (f === target) continue; // 자기 자신 제외
+    let content;
+    try { content = fs.readFileSync(f, 'utf8'); } catch { continue; }
+    if (!content.includes('[[')) continue;
+    const lines = content.split(/\r?\n/);
+    const matches = [];
+    for (let i = 0; i < lines.length && matches.length < 10; i++) {
+      for (const m of lines[i].matchAll(/\[\[([^\]\n|]+)(?:\|[^\]\n]*)?\]\]/g)) {
+        const key = m[1].trim().replace(/\.(md|markdown|mdown)$/i, '').toLowerCase();
+        if (key === targetKey) {
+          matches.push({ line: i + 1, text: lines[i].trim().slice(0, 300) });
+          break;
+        }
+      }
+    }
+    if (matches.length) results.push({ path: f, name: path.basename(f), matches });
+  }
+  return { results };
+});
+
 ipcMain.handle('pdf:export', async (_e, suggestedName) => {
   const res = await dialog.showSaveDialog(win, {
     defaultPath: suggestedName,

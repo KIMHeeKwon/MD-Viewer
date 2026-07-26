@@ -16,8 +16,13 @@
       </div>
       <nav id="tree" aria-label="문서 트리"></nav>
       <div id="outline-resizer" title="드래그로 목록/개요 높이 조절"></div>
-      <div id="outline-head"><span class="outline-caret">▾</span>개요</div>
+      <div id="outline-head">
+        <button id="panel-tab-outline" class="panel-tab active" type="button">개요</button>
+        <button id="panel-tab-backlinks" class="panel-tab" type="button">백링크<span id="bl-badge"></span></button>
+        <span class="outline-caret">▾</span>
+      </div>
       <nav id="outline" aria-label="문서 개요"></nav>
+      <nav id="backlinks" aria-label="백링크" hidden></nav>
     </aside>
     <div id="resizer" title="드래그로 폭 조절 · 더블클릭으로 초기화"></div>
     <main id="main">
@@ -55,6 +60,7 @@
       </footer>
     </main>
   </div>
+  <div id="drop-overlay" hidden><div class="drop-box">여기에 놓아 열기<span>.md · .pdf 파일 또는 폴더</span></div></div>
   <script src="../../renderer-dist/renderer.js"></script>
 </body>
 </html>

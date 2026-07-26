@@ -11,6 +11,8 @@ Supports GitHub Flavored Markdown plus math (KaTeX), diagrams (Mermaid), syntax 
 - **Rich syntax support** — GFM (tables, task lists, strikethrough, footnotes), KaTeX math, Mermaid diagrams, code syntax highlighting, Obsidian wikilinks & callouts
 - **Folder tree + tabs** — Open a folder to see the document tree in the sidebar, and open documents in multiple tabs. Sidebar width is draggable and remembered
 - **Outline panel** — Heading list at the bottom of the sidebar; click to jump, with the current position tracked as you scroll
+- **Backlinks panel** — Lists documents that reference the current one via `[[wikilinks]]`; click to open them
+- **Drag and drop** — Drop a file or folder onto the window to open it
 - **Find in document (⌘F)** — Match highlighting, match count, previous/next navigation
 - **Project-wide search (⌘⇧F)** — Search across all Markdown files in the folder; click a result to jump to that document
 - **Session restore** — Reopens the last folder and open tabs on the next launch

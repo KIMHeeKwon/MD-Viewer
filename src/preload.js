@@ -1,4 +1,4 @@
-const { contextBridge, ipcRenderer } = require('electron');
+const { contextBridge, ipcRenderer, webUtils } = require('electron');
 
 contextBridge.exposeInMainWorld('api', {
   openFolder: () => ipcRenderer.invoke('folder:open'),
@@ -8,6 +8,9 @@ contextBridge.exposeInMainWorld('api', {
   setWatched: (paths) => ipcRenderer.send('watch:set', paths),
   exportPdf: (suggestedName) => ipcRenderer.invoke('pdf:export', suggestedName),
   searchProject: (root, query) => ipcRenderer.invoke('search:project', { root, query }),
+  getBacklinks: (root, target) => ipcRenderer.invoke('links:backlinks', { root, target }),
+  // 드롭된 File 객체의 실제 경로 (Electron 32+에서 File.path가 제거됨)
+  pathForFile: (file) => webUtils.getPathForFile(file),
   onFileChanged: (cb) => ipcRenderer.on('file:changed', (_e, p) => cb(p)),
   onOpenFile: (cb) => ipcRenderer.on('open-file', (_e, p) => cb(p)),
   onMenu: (channel, cb) => {
