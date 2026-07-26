@@ -13,11 +13,12 @@ Supports GitHub Flavored Markdown plus math (KaTeX), diagrams (Mermaid), syntax 
 - **Outline panel** — Heading list at the bottom of the sidebar; click to jump, with the current position tracked as you scroll
 - **Backlinks panel** — Lists documents that reference the current one via `[[wikilinks]]`; click to open them
 - **Drag and drop** — Drop a file or folder onto the window to open it
-- **Find in document (⌘F)** — Match highlighting, match count, previous/next navigation
+- **Find in document (⌘F)** — Match highlighting, match count, previous/next navigation, with **regex** and **case-sensitive** options; **works in PDFs too**
+- **Reading width** — Choose narrow / normal / wide / full from the View menu (remembered)
 - **Project-wide search (⌘⇧F)** — Search across all Markdown files in the folder; click a result to jump to that document
 - **Session restore** — Reopens the last folder and open tabs on the next launch
 - **File association** — Double-click a `.md` file in Finder/Explorer to open it in MD Viewer (active after install)
-- **PDF** — View PDF files (integrated into the app theme, with page navigation and zoom) and export Markdown to PDF (⌘E, always output in light theme)
+- **PDF** — View PDF files (integrated into the app theme, with page navigation, zoom, and **text selection & search**) and export Markdown to PDF (⌘E, always output in light theme)
 - **File watching** — Automatically re-renders when a document is saved from an external editor (VS Code, Obsidian, etc.)
 - **Dark / light theme** (⌘⇧L)
 - **Fully offline** — Fonts and scripts are all bundled; no network requests

@@ -125,6 +125,15 @@ function buildMenu() {
           click: () => win && win.webContents.send('menu:search-project'),
         },
         {
+          label: '읽기 폭',
+          submenu: [
+            { label: '좁게', click: () => win && win.webContents.send('menu:read-width', 720) },
+            { label: '보통', click: () => win && win.webContents.send('menu:read-width', 860) },
+            { label: '넓게', click: () => win && win.webContents.send('menu:read-width', 1080) },
+            { label: '창 전체', click: () => win && win.webContents.send('menu:read-width', 0) },
+          ],
+        },
+        {
           label: '테마 전환',
           accelerator: 'CmdOrCtrl+Shift+L',
           click: () => win && win.webContents.send('menu:toggle-theme'),

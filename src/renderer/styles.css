@@ -261,7 +261,7 @@ body.resizing { cursor: col-resize; user-select: none; }
 .empty-hint { margin: 0; }
 
 .doc-body {
-  max-width: 860px;
+  max-width: var(--read-width, 860px);
   margin: 0 auto;
   padding: 40px;
   font-size: 15px;
@@ -409,11 +409,53 @@ body.resizing { cursor: col-resize; user-select: none; }
 .pdf-toolbar button:hover { color: var(--accent); }
 .pdf-pageinfo, .pdf-zoominfo { color: var(--dim); min-width: 52px; text-align: center; }
 .pdf-sep { width: 1px; height: 16px; background: var(--line); margin: 0 4px; }
-.pdf-page {
+.pdf-page-wrap {
+  position: relative;
+  flex: none;
   box-shadow: 0 4px 18px rgba(0, 0, 0, .45);
   border-radius: 2px;
   background: #fff;
 }
+:root[data-theme="light"] .pdf-page-wrap { box-shadow: 0 3px 14px rgba(30, 40, 70, .22); }
+.pdf-page { display: block; border-radius: 2px; }
+
+/* PDF 텍스트 레이어 — 캔버스 위 투명 텍스트 (선택·검색용). PDF.js가 요구하는 최소 규칙 */
+.textLayer {
+  position: absolute;
+  inset: 0;
+  overflow: clip;
+  line-height: 1;
+  text-align: initial;
+  text-size-adjust: none;
+  forced-color-adjust: none;
+  transform-origin: 0 0;
+  z-index: 1;
+  --min-font-size: 1;
+  --text-scale-factor: calc(var(--total-scale-factor) * var(--min-font-size));
+  --min-font-size-inv: calc(1 / var(--min-font-size));
+}
+.textLayer :is(span, br) {
+  color: transparent;
+  position: absolute;
+  white-space: pre;
+  cursor: text;
+  transform-origin: 0% 0%;
+  user-select: text;
+}
+.textLayer > :not(.markedContent),
+.textLayer .markedContent span:not(.markedContent) {
+  z-index: 1;
+  --font-height: 0;
+  font-size: calc(var(--text-scale-factor) * var(--font-height));
+  --scale-x: 1;
+  --rotate: 0deg;
+  transform: rotate(var(--rotate)) scaleX(var(--scale-x)) scale(var(--min-font-size-inv));
+}
+.textLayer .markedContent { display: contents; }
+.textLayer ::selection { background: rgba(122, 162, 247, .35); }
+/* PDF 하이라이트는 캔버스 글자를 가리지 않도록 반투명 + 글자색 투명 유지 */
+.textLayer mark.find-hl { background: rgba(255, 212, 94, .5); color: transparent; border-radius: 2px; }
+.textLayer mark.find-hl-active { background: rgba(122, 162, 247, .55); color: transparent; }
 :root[data-theme="light"] .pdf-page { box-shadow: 0 3px 14px rgba(30, 40, 70, .22); }
 .pdf-loading { color: var(--dim); padding: 40px; text-align: center; }
 
@@ -557,6 +599,22 @@ body.resizing { cursor: col-resize; user-select: none; }
 }
 #find-input:focus { border-color: var(--accent); }
 #find-input:disabled { opacity: .6; }
+#find-input.invalid { border-color: #f7768e; }
+
+/* 찾기 옵션 토글 (Aa · .*) */
+.find-opt {
+  border: 1px solid transparent;
+  background: var(--soft);
+  color: var(--dim);
+  border-radius: 4px;
+  padding: 3px 6px;
+  cursor: pointer;
+  font-family: "JetBrains Mono", "SF Mono", Consolas, monospace;
+  font-size: 11.5px;
+  line-height: 1.2;
+}
+.find-opt:hover { color: var(--fg); }
+.find-opt.on { background: var(--accent); color: #fff; border-color: var(--accent); }
 #find-count {
   font-family: "JetBrains Mono", "SF Mono", Consolas, monospace;
   font-size: 12px;

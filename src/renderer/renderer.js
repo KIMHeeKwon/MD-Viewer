@@ -169,22 +169,46 @@ async function renderPdfPages(tab) {
   // 진행 중인 이전 렌더링 무효화 (연속 줌 클릭 대응)
   tab.pdfRenderToken = (tab.pdfRenderToken || 0) + 1;
   const token = tab.pdfRenderToken;
-  for (const c of scroll.querySelectorAll('canvas.pdf-page')) c.remove();
+  for (const el of scroll.querySelectorAll('.pdf-page-wrap')) el.remove();
   const targetW = Math.min(docsEl.clientWidth - 96, 900) * tab.pdfZoom;
   const dpr = window.devicePixelRatio || 1;
   for (let p = 1; p <= doc.numPages; p++) {
     if (token !== tab.pdfRenderToken) return;
     const page = await doc.getPage(p);
     const base = page.getViewport({ scale: 1 });
-    const vp = page.getViewport({ scale: (targetW / base.width) * dpr });
+    const cssScale = targetW / base.width;
+    const vp = page.getViewport({ scale: cssScale * dpr });
+
+    const wrap = document.createElement('div');
+    wrap.className = 'pdf-page-wrap';
+    wrap.style.width = `${vp.width / dpr}px`;
+    wrap.style.height = `${vp.height / dpr}px`;
+
     const canvas = document.createElement('canvas');
     canvas.className = 'pdf-page';
     canvas.width = vp.width;
     canvas.height = vp.height;
     canvas.style.width = `${vp.width / dpr}px`;
     canvas.style.height = `${vp.height / dpr}px`;
-    scroll.append(canvas);
+    wrap.append(canvas);
+    scroll.append(wrap);
+
     await page.render({ canvasContext: canvas.getContext('2d'), viewport: vp }).promise;
+    if (token !== tab.pdfRenderToken) return;
+
+    // 텍스트 레이어 — 캔버스 위에 투명한 실제 텍스트를 얹어 선택·검색(⌘F)을 가능하게 한다
+    try {
+      const textDiv = document.createElement('div');
+      textDiv.className = 'textLayer';
+      textDiv.style.setProperty('--total-scale-factor', String(cssScale));
+      wrap.append(textDiv);
+      const layer = new pdfjsLib.TextLayer({
+        textContentSource: await page.getTextContent(),
+        container: textDiv,
+        viewport: page.getViewport({ scale: cssScale }),
+      });
+      await layer.render();
+    } catch { /* 텍스트가 없는 스캔 PDF 등은 그림만 표시 */ }
   }
   const zoomInfo = scroll.querySelector('.pdf-zoominfo');
   if (zoomInfo) zoomInfo.textContent = `${Math.round(tab.pdfZoom * 100)}%`;
@@ -197,19 +221,19 @@ async function rerenderPdf(tab, pane) {
 }
 
 function currentPdfPage(tab, pane) {
-  const canvases = [...tab.pdfScroll.querySelectorAll('canvas.pdf-page')];
+  const pages = [...tab.pdfScroll.querySelectorAll('.pdf-page-wrap')];
   const anchor = pane.scrollTop + 80;
-  for (let i = 0; i < canvases.length; i++) {
-    if (canvases[i].offsetTop + canvases[i].offsetHeight > anchor) return i;
+  for (let i = 0; i < pages.length; i++) {
+    if (pages[i].offsetTop + pages[i].offsetHeight > anchor) return i;
   }
-  return Math.max(0, canvases.length - 1);
+  return Math.max(0, pages.length - 1);
 }
 
 function movePdfPage(tab, pane, delta) {
-  const canvases = [...tab.pdfScroll.querySelectorAll('canvas.pdf-page')];
-  if (!canvases.length) return;
-  const next = Math.min(canvases.length - 1, Math.max(0, currentPdfPage(tab, pane) + delta));
-  pane.scrollTop = canvases[next].offsetTop - 64;
+  const pages = [...tab.pdfScroll.querySelectorAll('.pdf-page-wrap')];
+  if (!pages.length) return;
+  const next = Math.min(pages.length - 1, Math.max(0, currentPdfPage(tab, pane) + delta));
+  pane.scrollTop = pages[next].offsetTop - 64;
   updatePdfPageInfo(tab, pane);
 }
 
@@ -666,14 +690,23 @@ const findbar = $('#findbar');
 const findInput = $('#find-input');
 const findCount = $('#find-count');
 const findState = { matches: [], current: -1 };
+const findOpts = {
+  regex: localStorage.getItem('findRegex') === '1',
+  caseSensitive: localStorage.getItem('findCase') === '1',
+};
 
 function activeTab() {
   return state.tabs.find((t) => t.path === state.active) || null;
 }
 
+// 검색 대상 루트 — 마크다운은 본문, PDF는 텍스트 레이어가 얹힌 페이지 영역
+function searchRootOf(tab) {
+  if (!tab) return null;
+  return tab.pane.querySelector(tab.isPdf ? '.pdf-scroll' : '.doc-body');
+}
+
 function activeBody() {
-  const tab = activeTab();
-  return tab && !tab.isPdf ? tab.pane.querySelector('.doc-body') : null;
+  return searchRootOf(activeTab());
 }
 
 function topInPane(el, pane) {
@@ -694,19 +727,55 @@ function clearHighlights(body) {
   for (const p of parents) p.normalize(); // 인접 텍스트 노드 병합 (반복 검색 시 매치 유지)
 }
 
-function highlightInNode(textNode, lowerQuery) {
+// 검색 옵션(정규식·대소문자)에 따라 텍스트에서 매치 구간을 찾아주는 함수를 만든다.
+// 잘못된 정규식이면 null을 반환한다.
+function makeMatcher(query) {
+  if (!query) return null;
+  if (findOpts.regex) {
+    let re;
+    try {
+      re = new RegExp(query, findOpts.caseSensitive ? 'g' : 'gi');
+    } catch {
+      return null;
+    }
+    return (text) => {
+      const out = [];
+      re.lastIndex = 0;
+      let m;
+      while ((m = re.exec(text)) !== null) {
+        if (m[0].length === 0) { re.lastIndex++; continue; } // 빈 매치 무한루프 방지
+        out.push([m.index, m.index + m[0].length]);
+      }
+      return out;
+    };
+  }
+  const needle = findOpts.caseSensitive ? query : query.toLowerCase();
+  return (text) => {
+    const hay = findOpts.caseSensitive ? text : text.toLowerCase();
+    const out = [];
+    let from = 0;
+    let idx;
+    while ((idx = hay.indexOf(needle, from)) !== -1) {
+      out.push([idx, idx + needle.length]);
+      from = idx + needle.length;
+    }
+    return out;
+  };
+}
+
+function highlightInNode(textNode, matcher) {
   const text = textNode.nodeValue;
-  const low = text.toLowerCase();
+  const ranges = matcher(text);
+  if (!ranges.length) return;
   const frag = document.createDocumentFragment();
   let from = 0;
-  let idx;
-  while ((idx = low.indexOf(lowerQuery, from)) !== -1) {
-    if (idx > from) frag.appendChild(document.createTextNode(text.slice(from, idx)));
+  for (const [s, e] of ranges) {
+    if (s > from) frag.appendChild(document.createTextNode(text.slice(from, s)));
     const mark = document.createElement('mark');
     mark.className = 'find-hl';
-    mark.textContent = text.slice(idx, idx + lowerQuery.length);
+    mark.textContent = text.slice(s, e);
     frag.appendChild(mark);
-    from = idx + lowerQuery.length;
+    from = e;
   }
   if (from < text.length) frag.appendChild(document.createTextNode(text.slice(from)));
   textNode.parentNode.replaceChild(frag, textNode);
@@ -717,34 +786,31 @@ function runFind() {
   clearHighlights(body);
   findState.matches = [];
   findState.current = -1;
+  findInput.classList.remove('invalid');
 
   const tab = activeTab();
-  if (tab && tab.isPdf) {
-    findInput.disabled = true;
-    findInput.placeholder = 'PDF는 검색을 지원하지 않습니다';
-    findCount.textContent = '—';
-    return;
-  }
-  findInput.disabled = false;
-  findInput.placeholder = '찾기';
-
   const query = findInput.value;
   if (!body || !query) { updateFindCount(); return; }
 
-  const lower = query.toLowerCase();
+  const matcher = makeMatcher(query);
+  if (!matcher) { // 정규식 문법 오류
+    findInput.classList.add('invalid');
+    findCount.textContent = '오류';
+    return;
+  }
+
   const walker = document.createTreeWalker(body, NodeFilter.SHOW_TEXT, {
     acceptNode(node) {
       if (!node.nodeValue.trim()) return NodeFilter.FILTER_REJECT;
-      // KaTeX/Mermaid(SVG) 내부는 하이라이트가 레이아웃을 깨므로 제외
-      if (node.parentElement.closest('.katex, .mermaid, svg')) return NodeFilter.FILTER_REJECT;
-      return node.nodeValue.toLowerCase().includes(lower)
-        ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT;
+      // KaTeX/Mermaid(SVG)·PDF 툴바 내부는 하이라이트가 레이아웃을 깨므로 제외
+      if (node.parentElement.closest('.katex, .mermaid, svg, .pdf-toolbar')) return NodeFilter.FILTER_REJECT;
+      return matcher(node.nodeValue).length ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT;
     },
   });
   const targets = [];
   let n;
   while ((n = walker.nextNode())) targets.push(n); // DOM 수정 전에 대상 노드를 모두 수집
-  for (const t of targets) highlightInNode(t, lower);
+  for (const t of targets) highlightInNode(t, matcher);
 
   findState.matches = [...body.querySelectorAll('mark.find-hl')];
   if (findState.matches.length) {
@@ -777,9 +843,7 @@ function updateFindCount() {
 }
 
 function clearAllHighlights() {
-  for (const t of state.tabs) {
-    if (!t.isPdf) clearHighlights(t.pane.querySelector('.doc-body'));
-  }
+  for (const t of state.tabs) clearHighlights(searchRootOf(t));
 }
 
 // 활성 문서가 다시 그려지거나 탭이 바뀌면 하이라이트를 다시 맞춘다
@@ -791,17 +855,15 @@ function refreshFind() {
 
 function openFind(preset) {
   findbar.hidden = false;
-  const tab = activeTab();
-  if (!(tab && tab.isPdf)) {
-    if (typeof preset === 'string' && preset) {
-      findInput.value = preset;
-    } else {
-      const sel = String(window.getSelection() || '').trim();
-      if (sel && sel.length <= 80) findInput.value = sel;
-    }
+  if (typeof preset === 'string' && preset) {
+    findInput.value = preset;
+  } else {
+    const sel = String(window.getSelection() || '').trim();
+    if (sel && sel.length <= 80) findInput.value = sel;
   }
   runFind();
-  if (!findInput.disabled) { findInput.focus(); findInput.select(); }
+  findInput.focus();
+  findInput.select();
 }
 
 function closeFind() {
@@ -816,6 +878,32 @@ findInput.addEventListener('keydown', (e) => {
   if (e.key === 'Enter') { e.preventDefault(); setCurrentMatch(findState.current + (e.shiftKey ? -1 : 1)); }
   else if (e.key === 'Escape') { e.preventDefault(); closeFind(); }
 });
+// 찾기 옵션 토글 (대소문자 구분 · 정규식)
+const findCaseBtn = $('#find-case');
+const findRegexBtn = $('#find-regex');
+
+function syncFindOptButtons() {
+  findCaseBtn.classList.toggle('on', findOpts.caseSensitive);
+  findRegexBtn.classList.toggle('on', findOpts.regex);
+  findInput.placeholder = findOpts.regex ? '찾기 (정규식)' : '찾기';
+}
+syncFindOptButtons();
+
+findCaseBtn.addEventListener('click', () => {
+  findOpts.caseSensitive = !findOpts.caseSensitive;
+  localStorage.setItem('findCase', findOpts.caseSensitive ? '1' : '0');
+  syncFindOptButtons();
+  runFind();
+  findInput.focus();
+});
+findRegexBtn.addEventListener('click', () => {
+  findOpts.regex = !findOpts.regex;
+  localStorage.setItem('findRegex', findOpts.regex ? '1' : '0');
+  syncFindOptButtons();
+  runFind();
+  findInput.focus();
+});
+
 $('#find-next').addEventListener('click', () => setCurrentMatch(findState.current + 1));
 $('#find-prev').addEventListener('click', () => setCurrentMatch(findState.current - 1));
 $('#find-close').addEventListener('click', closeFind);
@@ -1052,6 +1140,16 @@ window.api.onMenu('menu:toggle-theme', toggleTheme);
 window.api.onMenu('menu:export-pdf', exportPdf);
 window.api.onMenu('menu:find', openFind);
 window.api.onMenu('menu:search-project', openSearch);
+
+/* ---------- 읽기 폭 ---------- */
+
+// 0이면 창 전체 폭을 쓴다
+function applyReadWidth(px) {
+  document.documentElement.style.setProperty('--read-width', px ? `${px}px` : 'none');
+  localStorage.setItem('readWidth', String(px));
+}
+applyReadWidth(Number(localStorage.getItem('readWidth') ?? 860));
+window.api.onMenu('menu:read-width', applyReadWidth);
 
 window.api.onOpenFile(openExternalFile);
 

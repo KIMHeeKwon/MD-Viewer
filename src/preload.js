@@ -14,8 +14,12 @@ contextBridge.exposeInMainWorld('api', {
   onFileChanged: (cb) => ipcRenderer.on('file:changed', (_e, p) => cb(p)),
   onOpenFile: (cb) => ipcRenderer.on('open-file', (_e, p) => cb(p)),
   onMenu: (channel, cb) => {
-    if (channel === 'menu:open-folder' || channel === 'menu:toggle-theme' || channel === 'menu:export-pdf' || channel === 'menu:find' || channel === 'menu:search-project') {
-      ipcRenderer.on(channel, () => cb());
+    const allowed = [
+      'menu:open-folder', 'menu:toggle-theme', 'menu:export-pdf',
+      'menu:find', 'menu:search-project', 'menu:read-width',
+    ];
+    if (allowed.includes(channel)) {
+      ipcRenderer.on(channel, (_e, ...args) => cb(...args));
     }
   },
 });
