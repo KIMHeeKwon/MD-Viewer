@@ -1,7 +1,7 @@
-# DESIGN.md — MD Viewer 디자인 토큰 (G3 수렴 확정)
+# DESIGN — MD Viewer 디자인 토큰 (G3 수렴 확정)
 
 > 방향: **C. IDE 다크** (G3 목업 4안 중 선택, 2026-07-24).
-> 레퍼런스: `design/g3-directions.html`의 `.dC` 프레임. Tokyo Night 팔레트 계열.
+> 레퍼런스: [[design/g3-directions.html]]의 `.dC` 프레임. Tokyo Night 팔레트 계열.
 > 이 파일이 색·타이포·간격의 단일 원천이다. 구현은 여기 정의된 토큰만 사용한다.
 
 ## 1. 색 토큰

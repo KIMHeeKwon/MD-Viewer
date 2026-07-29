@@ -1,5 +1,23 @@
 # WORKLOG — MD-Viewer-ALL
 
+## 2026-07-29 (문서 정비 — doc-style P1-6 적용 + 누락 산출물 생성)
+
+- **목표**: 오늘 개정된 `~/.claude/rules/doc-style.md`(P1-6, 내부 참조를 `[[위키링크]]`로 통일)를
+  기존 `.md` 산출물에 소급 적용하고, protocol §7이 규정한 누락 문서를 생성.
+- **표기 정비 (29건)**: 문서 간 참조를 위키링크로 전환 — [[DECISIONS]]·[[DESIGN]]·[[FAILURES]]·
+  [[README]]·[[README.en]]·[[데모|samples/데모.md]], 볼트 내 비-md 파일은 확장자 포함
+  ([[design/g3-directions.html]]·[[src/renderer/index.html]]·[[package.json]]).
+  - **링크하지 않은 것**: `.github/workflows/*.yml`(점 폴더는 Obsidian이 색인하지 않음),
+    `renderer-dist/*`(gitignore된 빌드 산출물) → 규약에 따라 백틱 경로로만 표기.
+  - **문법 예시 보호**: 기능 설명에 쓰인 `[[위키링크]]`·`[[wikilinks]]`를 백틱으로 감싸
+    미해결 링크가 생기지 않게 함. 문서 제목의 `.md` 접미사도 제거해 통일.
+- **신규 생성**: [[CLAUDE]](프로젝트 오버라이드 — 스택 고정 사실·릴리스 절차·검증 규칙·CDP 검증 수단),
+  [[RATIONALE]](G-R 고찰 로그 6항목 — 셸 선택 논증, 관점 전복 2건, 실패 교훈 3건, 논문 소재 태그 포함).
+- **부수 정리**: [[FAILURES]]의 `## Active Rules`가 두 섹션으로 갈라져 있던 결함을 통합하고
+  본문에 흩어져 있던 Rule 3·4를 섹션 안으로 승격 — 절 링크가 모호해지는 것을 막기 위함.
+- **미생성**: `implementation-notes.md`는 protocol §G5상 **작업 단위 임시 파일**이라 상시 보관
+  대상이 아니다. 진행 중 작업이 없어 만들지 않았고, [[DECISIONS]]의 참조는 전방 참조로 남긴다.
+
 ## 2026-07-29 (v0.7.1 — PDF 탭 닫기 버그 수정)
 
 - **증상**: PDF 탭의 × 버튼이 동작하지 않음(사용자 신고). 마크다운 탭은 정상.
@@ -9,7 +27,7 @@
 - **원인**: pdfjs-dist 6에서 `PDFDocumentProxy.destroy()`가 제거되고 `loadingTask.destroy()`로 대체됨.
   예외가 `closeTab`의 나머지(탭·패널 제거)를 중단시킴. v0.2.0부터 존재한 잠복 버그.
 - **조치**: `pdfDoc.loadingTask?.destroy()`로 교체 + try/catch로 감쌈(해제 실패가 닫기를 막지 않도록).
-  FAILURES.md에 Active Rule 3·4 승격.
+  [[FAILURES]]에 Active Rule 3·4 승격.
 - **검증**: CDP 자동 테스트 3종 — PDF 단독(탭 1→0), 마크다운 단독(회귀 없음), PDF+마크다운 혼합
   (PDF만 닫히고 활성 탭이 샘플.md로 전환) — 전부 통과, 오류 0건.
 
@@ -58,11 +76,11 @@
 
 ## 2026-07-25 (v0.3.3 — 설치본 렌더러 누락 긴급 수정 + 앱 아이콘)
 
-- **긴급 버그**: 설치본 실행 시 GUI·기능 전무(뼈대 HTML만). 진단 결과 app.asar(199KB)에 renderer-dist 누락 → index.html의 renderer.{js,css} 404.
-  - 원인: release.yml이 electron-builder 전에 `npm run bundle`을 실행하지 않음. renderer-dist는 gitignore라 CI에 미존재 → 패키지에서 통째 누락. v0.1.0~v0.3.2 전부 동일 결함(dev 실행에만 의존해 6개 릴리스 동안 미발견).
-  - 조치: release.yml에 "Build renderer" 단계 추가. 로컬 `npm run dist`로 asar 8.3MB·renderer-dist 64항목 포함 검증. FAILURES.md Active Rule 2 승격.
+- **긴급 버그**: 설치본 실행 시 GUI·기능 전무(뼈대 HTML만). 진단 결과 `app.asar`(199KB)에 `renderer-dist` 누락 → [[src/renderer/index.html]]의 `renderer.{js,css}` 404.
+  - 원인: `release.yml`이 electron-builder 전에 `npm run bundle`을 실행하지 않음. renderer-dist는 gitignore라 CI에 미존재 → 패키지에서 통째 누락. v0.1.0~v0.3.2 전부 동일 결함(dev 실행에만 의존해 6개 릴리스 동안 미발견).
+  - 조치: `release.yml`에 "Build renderer" 단계 추가. 로컬 `npm run dist`로 asar 8.3MB·renderer-dist 64항목 포함 검증. [[FAILURES]] Active Rule 2 승격.
 - **앱 아이콘**: 사용자 제공 이미지(design/icon-source.png, MD|PDF 문서 + 네이비 라운드 사각형)를 PIL flood-fill로 흰 여백 투명화 → 1024 마스터 → icns(iconutil)/ico 생성, electron-builder mac.icon/win.icon 연결. 패키지 Info.plist CFBundleIconFile=icon.icns 검증.
-- **README(한/영)**: macOS "손상되었다" 경고 해결법(우클릭 열기 / `xattr -dr com.apple.quarantine`) 및 Windows SmartScreen 안내 추가.
+- **[[README]]·[[README.en]]**: macOS "손상되었다" 경고 해결법(우클릭 열기 / `xattr -dr com.apple.quarantine`) 및 Windows SmartScreen 안내 추가.
 - **환경 이슈**: 작업 중 macOS TCC 권한이 회수되어 ~/Documents 접근이 차단됨 → 사용자가 전체 디스크 접근 권한 부여 + 앱 재시작으로 복구.
 
 
@@ -86,7 +104,7 @@
   1. **개요(아웃라인) 패널** — 사이드바 하단, 헤딩(h1~h6) 트리·클릭 점프·현재 위치 추적, 접기 가능. 헤딩 id 부여(앵커 겸용).
   2. **세션 복원** — 폴더·열린 탭·활성 탭을 localStorage에 저장, 시작 시 재스캔 복원(folder:openPath IPC). 삭제 파일 건너뜀.
   3. **전체 검색 (⌘⇧F)** — main 프로세스 줄 단위 스캔(상한 300건), 파일별 그룹·줄 번호·하이라이트, 결과 클릭 시 문서 열고 ⌘F 재사용으로 이동. 검색 알고리즘 node 스크립트로 실데이터 검증("CIDOC" 4건 정확).
-- **현재 진행도**: 3종 구현·번들·재기동 완료(오류 없음). README(한/영)·DECISIONS 갱신. v0.3.0 태그 예정.
+- **현재 진행도**: 3종 구현·번들·재기동 완료(오류 없음). [[README]]·[[README.en]]·[[DECISIONS]] 갱신. v0.3.0 태그 예정.
 - **남은 미결**: GUI 육안 검증(화면 기록 권한 부재) — 사용자 확인 필요.
 
 ## 2026-07-24 (v0.2 착수)
@@ -96,23 +114,23 @@
 - **현재 진행도**: 구현·번들·재기동 완료. PDF 열람/내보내기 육안 검증 대기 (화면 기록 권한 부재).
 - **사용자 피드백 반영 (1차)**: ① 사이드바 드래그 리사이저 추가 (160–480px, localStorage로 폭 기억, 더블클릭 초기화). ② PDF 이질감 해결 — Chromium 내장 뷰어(iframe, 자체 회색 UI 스타일링 불가)를 걷어내고 **PDF.js(pdfjs-dist) 직접 렌더링**으로 교체: 페이지를 canvas로 그려 앱 테마 배경 위에 그림자와 함께 배치. CSP의 frame-src 허용도 원복.
 - **사용자 피드백 반영 (2차)**: ① 탭 오버플로 수정 — 최대 폭 190px + 말줄임 + 툴팁, 활성 탭 자동 스크롤, 휠 가로 스크롤. ② PDF 툴바 추가 — 페이지 이전/다음 + 현재 페이지 표시, 확대/축소(40~300%)/폭 맞춤, 스크롤 위치 기반 페이지 추적. ③ 개발 모드에서 앱 이름이 "Electron"으로 보이는 건은 dev 바이너리의 Info.plist 한계로 판정 — 패키징된 릴리스는 "MD Viewer"로 표시됨, app.setName만 보강.
-- **v0.2.0 릴리스**: 태그 push → 빌드 성공했으나 releaseType=release로도 경합 재발(TOCTOU, FAILURES.md 개정) → 수동 병합 후 공개. 근본 수정: release.yml에 create-release 선행 잡 추가 (v0.3.0에서 검증).
+- **v0.2.0 릴리스**: 태그 push → 빌드 성공했으나 releaseType=release로도 경합 재발(TOCTOU, [[FAILURES]] 개정) → 수동 병합 후 공개. 근본 수정: `release.yml`에 create-release 선행 잡 추가 (v0.3.0에서 검증).
 - **사용자 피드백 반영 (3차)**: PDF 내보내기가 다크 배경 그대로 출력되는 문제 → 내보내기는 화면 테마와 무관하게 **항상 라이트(인쇄) 테마 강제**로 수정. @media print에서 색 토큰 라이트 오버라이드 + 코드 블록 단색화(잉크 친화), Mermaid는 내보내기 직전 라이트 재렌더링 후 복원.
-- **v0.2.1 릴리스**: 사용자 검증 후 태그 push → **create-release 선행 잡이 경합을 실제로 차단, 단일 릴리스로 자산 집결 확인** (FAILURES.md 사례 종결). https://github.com/KIMHeeKwon/MD-Viewer/releases/tag/v0.2.1
+- **v0.2.1 릴리스**: 사용자 검증 후 태그 push → **create-release 선행 잡이 경합을 실제로 차단, 단일 릴리스로 자산 집결 확인** ([[FAILURES]] 사례 종결). https://github.com/KIMHeeKwon/MD-Viewer/releases/tag/v0.2.1
 - **기능 추가: 문서 내 찾기 (⌘F)**: 보기 메뉴 "찾기…"(⌘F). 활성 마크다운 문서에서 대소문자 무시 매치 하이라이트(노랑) + 현재 매치 강조(액센트) + 개수 표시(n/total), Enter/⇧Enter·▲▼로 이전/다음, Esc 닫기. 선택 텍스트를 초기 쿼리로 시드. 탭 전환·파일 변경·테마 전환 시 하이라이트 자동 재적용(refreshFind). KaTeX/Mermaid(SVG) 내부는 하이라이트 제외(레이아웃 보호). PDF 탭은 canvas라 검색 불가 → 입력 비활성 + 안내. 인쇄 CSS에서 findbar·하이라이트 숨김.
 - **다음 단계**: 백로그 — 프로젝트 전체(파일 간) 검색, Finder .md 연결, Intel Mac(x64) 빌드, macOS 코드 서명, PDF 텍스트 검색.
 
 ## 2026-07-24
 
 - **목표**: 마크다운 뷰어 신규 프로젝트 착수 (L2). G1 블라인드 스팟 진단 → G2 인터뷰 → G3 시각 방향 브레인스톰.
-- **결정사항**: P0 4건 확정 — macOS+Windows / Electron / GFM+KaTeX+Mermaid+Obsidian 확장 / 폴더 트리+탭. `DECISIONS.md` 기록 완료.
+- **결정사항**: P0 4건 확정 — macOS+Windows / Electron / GFM+KaTeX+Mermaid+Obsidian 확장 / 폴더 트리+탭. [[DECISIONS]] 기록 완료.
 - **산출물**:
-  - `DECISIONS.md` (G2 산출물)
+  - [[DECISIONS]] (G2 산출물)
   - G3 목업 Artifact — 시각 방향 4안 (A GitHub 표준 / B 서재 / C IDE 다크 / D 젠 미니멀): https://claude.ai/code/artifact/8528a973-87e1-4704-bb1e-29d19b20a23a
 - **현재 진행도**: G3 반응 대기 (방향 선택 전). 코드 미착수.
 - **남은 미결**: 시각 방향 선택, 파일 감시(자동 갱신) 포함 여부.
-- **다음 단계**: 방향 확정 → `DESIGN.md` 토큰 고정 → G4.5 구현 계획 (Electron 스캐폴드, markdown-it 파이프라인, 보안 설정 포함).
+- **다음 단계**: 방향 확정 → [[DESIGN]] 토큰 고정 → G4.5 구현 계획 (Electron 스캐폴드, markdown-it 파이프라인, 보안 설정 포함).
 - **저장소**: https://github.com/KIMHeeKwon/MD-Viewer 개설·초기 push 완료 (계정 KIMHeeKwon, 로컬 user.email=hkkim79@gmail.com 설정).
-- **G3 수렴·G5 구현 (같은 날 후속)**: 시각 방향 **C(IDE 다크)** + 파일 감시 포함 확정 → `DESIGN.md` 토큰 고정 → Electron 스캐폴드 v0.1 구현 완료. 구성: main(창·트리 스캔·chokidar 감시·IPC), preload(contextBridge 5 API), renderer(markdown-it + KaTeX/texmath + Mermaid + hljs + 커스텀 위키링크·콜아웃 플러그인, 트리/탭/테마/상태바 UI), samples/데모.md. esbuild 번들 성공, 앱 기동 확인(오류 출력 없음). 화면 기록 권한 부재로 스크린샷 자체 검증은 못 함 — 사용자 육안 확인 필요.
-- **v0.1.0 릴리스**: 태그 push → macOS(dmg/zip)·Windows(exe) 빌드 성공. 드래프트 분열 경합 발생(FAILURES.md 기록) → 자산 수동 병합 후 공개: https://github.com/KIMHeeKwon/MD-Viewer/releases/tag/v0.1.0. 재발 방지로 `releaseType: release` 설정 추가.
-- **CI/CD**: GitHub Actions 2종 추가 — `ci.yml`(push/PR 시, package.json 생기기 전에는 자동 skip), `release.yml`(v* 태그 시 electron-builder로 macOS+Windows 패키징 후 Release 업로드). 스캐폴드 생성 시 npm 스크립트명(build/dist)과 정합 확인 필요.
+- **G3 수렴·G5 구현 (같은 날 후속)**: 시각 방향 **C(IDE 다크)** + 파일 감시 포함 확정 → [[DESIGN]] 토큰 고정 → Electron 스캐폴드 v0.1 구현 완료. 구성: main(창·트리 스캔·chokidar 감시·IPC), preload(contextBridge 5 API), renderer(markdown-it + KaTeX/texmath + Mermaid + hljs + 커스텀 위키링크·콜아웃 플러그인, 트리/탭/테마/상태바 UI), [[데모|samples/데모.md]]. esbuild 번들 성공, 앱 기동 확인(오류 출력 없음). 화면 기록 권한 부재로 스크린샷 자체 검증은 못 함 — 사용자 육안 확인 필요.
+- **v0.1.0 릴리스**: 태그 push → macOS(dmg/zip)·Windows(exe) 빌드 성공. 드래프트 분열 경합 발생([[FAILURES]] 기록) → 자산 수동 병합 후 공개: https://github.com/KIMHeeKwon/MD-Viewer/releases/tag/v0.1.0. 재발 방지로 `releaseType: release` 설정 추가.
+- **CI/CD**: GitHub Actions 2종 추가 — `ci.yml`(push/PR 시, [[package.json]] 생기기 전에는 자동 skip), `release.yml`(v* 태그 시 electron-builder로 macOS+Windows 패키징 후 Release 업로드). 스캐폴드 생성 시 npm 스크립트명(build/dist)과 정합 확인 필요.

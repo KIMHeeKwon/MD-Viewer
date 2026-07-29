@@ -1,10 +1,10 @@
 # MD Viewer
 
-**한국어**: [README.md](README.md) · **English**: README.en.md
+**한국어**: [[README]] · **English**: this document
 
 A **standalone desktop viewer** that renders Markdown the way the author intended. Runs on macOS and Windows, fully offline.
 
-Supports GitHub Flavored Markdown plus math (KaTeX), diagrams (Mermaid), syntax highlighting, and Obsidian extensions ([[wikilinks]], callouts). Browse many documents at once with a folder tree and multiple tabs.
+Supports GitHub Flavored Markdown plus math (KaTeX), diagrams (Mermaid), syntax highlighting, and Obsidian extensions (`[[wikilinks]]`, callouts). Browse many documents at once with a folder tree and multiple tabs.
 
 ## Features
 
