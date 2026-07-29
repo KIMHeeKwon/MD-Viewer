@@ -709,6 +709,40 @@ mark.find-hl-active {
   color: #fff;
 }
 
+/* 업데이트 알림 바 */
+#update-bar {
+  position: fixed;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: 34px;
+  z-index: 120;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--side);
+  border: 1px solid var(--accent);
+  border-radius: 10px;
+  padding: 9px 12px;
+  box-shadow: 0 6px 22px rgba(0, 0, 0, .38);
+  font-size: 13px;
+  max-width: calc(100vw - 40px);
+}
+#update-bar[hidden] { display: none; }
+#ub-msg { color: var(--fg); }
+#update-bar button {
+  border: 1px solid var(--line);
+  background: var(--soft);
+  color: var(--fg);
+  border-radius: 5px;
+  padding: 3px 10px;
+  cursor: pointer;
+  font-size: 12px;
+  white-space: nowrap;
+}
+#ub-action { background: var(--accent); color: #fff; border-color: var(--accent); font-weight: 600; }
+#update-bar button:hover { filter: brightness(1.1); }
+#ub-mute, #ub-close { color: var(--dim); }
+
 /* 드래그앤드롭 오버레이 */
 #drop-overlay {
   position: fixed;

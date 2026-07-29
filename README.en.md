@@ -41,7 +41,8 @@ A per-OS manual covering installation, usage, and shortcuts is also included:
 - **HTML export (⌘⇧E)** — A **single self-contained HTML file** with styles, math fonts, and images embedded; opens identically in any browser, offline
 - **File watching** — Automatically re-renders when a document is saved from an external editor (VS Code, Obsidian, etc.)
 - **Dark / light theme** (⌘⇧L)
-- **Fully offline** — Fonts and scripts are all bundled; no network requests
+- **Offline rendering** — Fonts and scripts are bundled, so documents look identical without a network
+- **Update check** — Notifies you when a new version ships (auto-install on Windows / Linux AppImage). Can be turned off
 
 ## Installation
 

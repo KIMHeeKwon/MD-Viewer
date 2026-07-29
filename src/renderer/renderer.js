@@ -1246,6 +1246,62 @@ $('#st-font').addEventListener('click', () => {
 
 window.api.onOpenFile(openExternalFile);
 
+/* ---------- 업데이트 확인 ----------
+ * 새 버전 확인은 시작 후 한 번만 조회한다. 원하지 않으면 끌 수 있고, 끄면 조회하지 않는다.
+ * (문서 렌더링 자산은 전부 번들이므로 이 기능과 무관하게 오프라인에서도 문서는 정상 표시된다.)
+ */
+
+const updateBar = $('#update-bar');
+const ubMsg = $('#ub-msg');
+const ubAction = $('#ub-action');
+
+function showUpdateBar(msg, actionLabel, onAction, { mutable = true } = {}) {
+  ubMsg.textContent = msg;
+  ubAction.hidden = !actionLabel;
+  ubAction.textContent = actionLabel || '';
+  ubAction.onclick = onAction || null;
+  $('#ub-mute').hidden = !mutable;
+  updateBar.hidden = false;
+}
+
+async function runUpdateCheck({ manual = false } = {}) {
+  if (manual) showUpdateBar('새 버전을 확인하는 중…', '', null, { mutable: false });
+  const r = await window.api.checkUpdate();
+  if (!r) return;
+  if (r.status === 'notify') {
+    // macOS(서명 없음)·deb 설치본 — 내려받기 안내만 한다
+    showUpdateBar(`새 버전 v${r.version}이 있습니다 (현재 v${r.current})`,
+      '다운로드 페이지 열기', () => window.api.openReleasePage());
+  } else if (r.status === 'downloading') {
+    showUpdateBar(`새 버전 v${r.version} 내려받는 중…`, '', null);
+  } else if (r.status === 'downloaded') {
+    showUpdateBar(`새 버전 v${r.version} 준비 완료`, '재시작하여 설치', () => window.api.installUpdate());
+  } else if (manual) {
+    if (r.status === 'latest') showUpdateBar(`최신 버전입니다 (v${r.current})`, '', null, { mutable: false });
+    else if (r.status === 'dev') showUpdateBar('개발 모드에서는 업데이트를 확인하지 않습니다', '', null, { mutable: false });
+    else showUpdateBar(`확인 실패: ${r.message || '네트워크 오류'}`, '', null, { mutable: false });
+  }
+}
+
+// 내려받기가 끝나면 main이 알려준다 (Windows·Linux AppImage)
+window.api.onUpdateState((s) => {
+  if (s.status === 'downloaded') {
+    showUpdateBar(`새 버전 v${s.version} 준비 완료`, '재시작하여 설치', () => window.api.installUpdate());
+  }
+});
+
+$('#ub-close').addEventListener('click', () => { updateBar.hidden = true; });
+$('#ub-mute').addEventListener('click', () => {
+  localStorage.setItem('autoUpdateCheck', '0');
+  showUpdateBar('자동 확인을 껐습니다. 도움말 › 새 버전 확인에서 직접 확인할 수 있습니다.', '', null, { mutable: false });
+});
+window.api.onMenu('menu:check-update', () => runUpdateCheck({ manual: true }));
+
+// 시작 시 자동 확인 (기본 켜짐). 설정이 꺼져 있으면 네트워크를 건드리지 않는다.
+if (localStorage.getItem('autoUpdateCheck') !== '0') {
+  setTimeout(() => runUpdateCheck(), 2500);
+}
+
 /* ---------- 드래그앤드롭으로 열기 ---------- */
 
 const dropOverlay = $('#drop-overlay');

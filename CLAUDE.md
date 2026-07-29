@@ -27,11 +27,17 @@ GitHub 웹에서 링크로 동작해야 한다는 판단(사용자 승인, 2026-
 | 렌더링 | markdown-it (+ task-lists · footnote · texmath) · KaTeX · Mermaid · highlight.js |
 | PDF | PDF.js (`pdfjs-dist`) — 캔버스 + 텍스트 레이어 |
 | 파일 감시 | chokidar |
-| 패키징 | electron-builder (macOS dmg/zip, Windows nsis) |
+| 패키징 | electron-builder (macOS dmg/zip, Windows nsis, Linux AppImage/deb) |
+| 업데이트 | electron-updater (Windows·Linux AppImage 자동 설치, macOS·deb 알림) |
 
-- **네트워크 요청 금지**: 폰트·스크립트는 전부 번들한다. 완전 오프라인 동작이 요건이다
+- **렌더링 자산은 전부 번들한다**: 폰트·스크립트를 CDN에서 불러오지 않는다. 목적은
+  오프라인 자체가 아니라 **어디서나 같은 모습으로 보이게** 하는 것이다
   ([[DESIGN#4. 금지 목록|DESIGN 금지 목록]]).
-- 새 의존성을 추가할 때는 오프라인 동작과 번들 크기 영향을 먼저 확인한다.
+- 새 의존성을 추가할 때는 번들 크기와 렌더링 영향을 먼저 확인한다.
+- **전역 지침의 환경 전제는 이 프로젝트에 적용되지 않는다**: `~/.claude/rules/protocol.md` §5의
+  온프레미·망분리·GPU(RTX 6000) 전제는 **하드웨어 사양이 필요하거나 망분리 환경에 구축해야 하는
+  LLM·추론 시스템**을 위한 것이다. 이 앱은 어느 PC에서나 동작하는 범용 도구이므로 그 제약을
+  끌어오지 않는다 (사용자 확인, 2026-07-29 — [[DECISIONS|D16]]).
 
 ## 3. 개발·릴리스 절차
 

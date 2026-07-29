@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, dialog, Menu } = require('electron');
+const { app, BrowserWindow, ipcMain, dialog, Menu, shell, net } = require('electron');
 const path = require('node:path');
 const fs = require('node:fs');
 const chokidar = require('chokidar');
@@ -172,6 +172,16 @@ function buildMenu() {
       ],
     },
     { role: 'windowMenu' },
+    {
+      label: '도움말',
+      submenu: [
+        { label: '새 버전 확인…', click: () => win && win.webContents.send('menu:check-update') },
+        {
+          label: '릴리스 페이지 열기',
+          click: () => shell.openExternal(RELEASES_PAGE),
+        },
+      ],
+    },
   ];
   Menu.setApplicationMenu(Menu.buildFromTemplate(template));
 }
@@ -247,6 +257,97 @@ ipcMain.handle('search:project', async (_e, { root, query }) => {
   }
   return { results, capped: total >= MAX_TOTAL };
 });
+
+/* ---------- 업데이트 확인 ----------
+ * Windows·Linux(AppImage): electron-updater로 내려받아 재시작 시 설치한다.
+ * macOS: Apple 코드 서명이 없어 Squirrel이 업데이트를 거부하므로 새 버전 '알림'만 한다.
+ * deb로 설치한 Linux도 자동 설치 대상이 아니라 알림만 한다 (패키지 관리자 영역).
+ * 조회는 렌더러가 요청할 때만 일어난다 — 사용자가 자동 확인을 끄면 아무 요청도 하지 않는다.
+ */
+const RELEASES_PAGE = 'https://github.com/KIMHeeKwon/MD-Viewer/releases/latest';
+const canSelfUpdate = () => process.platform === 'win32'
+  || (process.platform === 'linux' && !!process.env.APPIMAGE);
+
+function latestTagFromGitHub() {
+  return new Promise((resolve, reject) => {
+    const req = net.request({
+      method: 'GET',
+      url: 'https://api.github.com/repos/KIMHeeKwon/MD-Viewer/releases/latest',
+    });
+    req.setHeader('Accept', 'application/vnd.github+json');
+    req.setHeader('User-Agent', 'MD-Viewer');
+    let body = '';
+    req.on('response', (res) => {
+      res.on('data', (c) => { body += c; });
+      res.on('end', () => {
+        try { resolve(JSON.parse(body).tag_name || null); }
+        catch (err) { reject(err); }
+      });
+    });
+    req.on('error', reject);
+    req.end();
+  });
+}
+
+// "1.2.3" 비교 — 왼쪽이 더 새 버전이면 true
+function isNewer(a, b) {
+  const pa = String(a).replace(/^v/, '').split('.').map(Number);
+  const pb = String(b).replace(/^v/, '').split('.').map(Number);
+  for (let i = 0; i < 3; i++) {
+    if ((pa[i] || 0) !== (pb[i] || 0)) return (pa[i] || 0) > (pb[i] || 0);
+  }
+  return false;
+}
+
+let updaterWired = false;
+
+ipcMain.handle('update:check', async () => {
+  const current = app.getVersion();
+  if (!app.isPackaged) return { status: 'dev', current };
+
+  if (canSelfUpdate()) {
+    try {
+      const { autoUpdater } = require('electron-updater');
+      autoUpdater.autoDownload = true;
+      autoUpdater.autoInstallOnAppQuit = true;
+      if (!updaterWired) {
+        updaterWired = true;
+        autoUpdater.on('update-downloaded', (info) => {
+          if (win) win.webContents.send('update:state', { status: 'downloaded', version: info.version, current });
+        });
+        autoUpdater.on('error', (err) => {
+          if (win) win.webContents.send('update:state', { status: 'error', message: String(err && err.message || err) });
+        });
+      }
+      const r = await autoUpdater.checkForUpdates();
+      const version = r && r.updateInfo && r.updateInfo.version;
+      if (version && isNewer(version, current)) return { status: 'downloading', version, current };
+      return { status: 'latest', current };
+    } catch (err) {
+      return { status: 'error', message: String(err && err.message || err), current };
+    }
+  }
+
+  // 알림 전용 경로 (macOS, deb 설치 Linux)
+  try {
+    const tag = await latestTagFromGitHub();
+    if (tag && isNewer(tag, current)) return { status: 'notify', version: tag.replace(/^v/, ''), current };
+    return { status: 'latest', current };
+  } catch (err) {
+    return { status: 'error', message: String(err && err.message || err), current };
+  }
+});
+
+ipcMain.handle('update:install', async () => {
+  if (!canSelfUpdate()) return false;
+  try {
+    const { autoUpdater } = require('electron-updater');
+    autoUpdater.quitAndInstall();
+    return true;
+  } catch { return false; }
+});
+
+ipcMain.handle('update:openPage', async () => { shell.openExternal(RELEASES_PAGE); return true; });
 
 // 폴더 전체의 위키링크 연결 관계를 노드·간선으로 수집 (연결 그래프)
 ipcMain.handle('graph:build', async (_e, { root }) => {
