@@ -1,5 +1,18 @@
 # WORKLOG — MD-Viewer-ALL
 
+## 2026-07-29 (v0.7.1 — PDF 탭 닫기 버그 수정)
+
+- **증상**: PDF 탭의 × 버튼이 동작하지 않음(사용자 신고). 마크다운 탭은 정상.
+- **진단 방법**: 코드 정독으로는 원인이 불분명해, **CDP(원격 디버깅)로 실제 앱을 자동 조작**해 재현.
+  세션 복원 기능을 이용해 PDF 탭을 심고 새로고침 → 닫기 버튼 클릭 → 예외 수집.
+  `TypeError: pdfDoc.destroy is not a function` 포착.
+- **원인**: pdfjs-dist 6에서 `PDFDocumentProxy.destroy()`가 제거되고 `loadingTask.destroy()`로 대체됨.
+  예외가 `closeTab`의 나머지(탭·패널 제거)를 중단시킴. v0.2.0부터 존재한 잠복 버그.
+- **조치**: `pdfDoc.loadingTask?.destroy()`로 교체 + try/catch로 감쌈(해제 실패가 닫기를 막지 않도록).
+  FAILURES.md에 Active Rule 3·4 승격.
+- **검증**: CDP 자동 테스트 3종 — PDF 단독(탭 1→0), 마크다운 단독(회귀 없음), PDF+마크다운 혼합
+  (PDF만 닫히고 활성 탭이 샘플.md로 전환) — 전부 통과, 오류 0건.
+
 ## 2026-07-26 (저장소 설정 — main 브랜치 보호)
 
 - 저장소는 생성 시부터 public이며 그대로 유지하기로 함. public은 열람만 개방될 뿐 쓰기 권한은 소유자(KIMHeeKwon)에게만 있어 외부인의 직접 수정은 불가.

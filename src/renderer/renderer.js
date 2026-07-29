@@ -396,7 +396,13 @@ function activateTab(path) {
 function closeTab(path) {
   const idx = state.tabs.findIndex((t) => t.path === path);
   if (idx < 0) return;
-  if (state.tabs[idx].pdfDoc) state.tabs[idx].pdfDoc.destroy();
+  // PDF.js 6에는 PDFDocumentProxy.destroy()가 없다 — loadingTask로 워커까지 해제한다.
+  // 해제에 실패하더라도 탭은 반드시 닫혀야 하므로 예외를 삼킨다.
+  const closing = state.tabs[idx];
+  if (closing.pdfDoc) {
+    try { closing.pdfDoc.loadingTask?.destroy(); } catch { /* 해제 실패가 탭 닫기를 막지 않게 */ }
+    closing.pdfDoc = null;
+  }
   state.tabs[idx].pane.remove();
   state.tabs.splice(idx, 1);
   if (state.active === path) {

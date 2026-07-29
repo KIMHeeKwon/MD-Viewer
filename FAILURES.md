@@ -43,6 +43,22 @@
 - 조치: release.yml에 "Build renderer" 단계 추가. 로컬 `npm run dist`로 asar에 renderer-dist
   포함(8.3MB) 검증 후 v0.3.3 재릴리스. Active Rule 2 승격.
 
+### 2026-07-29 — PDF 탭이 닫히지 않음 (제거된 라이브러리 API 호출)
+- 증상: PDF 탭의 × 버튼이 아무 반응 없음. 마크다운 탭은 정상.
+- 원인: `closeTab`이 `pdfDoc.destroy()`를 호출했으나 **pdfjs-dist 6에는 `PDFDocumentProxy.destroy()`가 없다**
+  (`loadingTask.destroy()`로 대체됨). `TypeError`가 발생하며 그 아래의 탭·패널 제거 코드에 도달하지 못했다.
+  v0.2.0(PDF 열람 도입) 이후 계속 존재했으나, 탭을 닫는 조작을 테스트하지 않아 미발견.
+- 조치: `pdfDoc.loadingTask?.destroy()`로 교체하고 **try/catch로 감쌌다** — 자원 해제 실패가
+  사용자의 닫기 조작을 막아서는 안 되기 때문. CDP로 실제 앱을 자동 조작해 3개 시나리오
+  (PDF 단독 / 마크다운 단독 / PDF+마크다운 혼합) 재현·검증.
+
+**Active Rule 3**: 정리(cleanup) 코드가 사용자 조작 경로(닫기·삭제·취소) 안에 있으면 반드시
+try/catch로 감싼다. 자원 해제 실패는 로그 대상이지 조작 차단 사유가 아니다.
+
+**Active Rule 4**: 외부 라이브러리 메이저 버전을 올리거나 새로 도입할 때, 사용하는 API가 해당
+버전에 실제로 존재하는지 확인한다(타입 정의·소스 grep). 특히 `destroy`/`cleanup` 같은 생명주기
+메서드는 버전 간 변경이 잦다.
+
 ## 프로토콜 우회 로그
 
 (없음)
