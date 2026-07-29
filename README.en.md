@@ -6,6 +6,20 @@ A **standalone desktop viewer** that renders Markdown the way the author intende
 
 Supports GitHub Flavored Markdown plus math (KaTeX), diagrams (Mermaid), syntax highlighting, and Obsidian extensions (`[[wikilinks]]`, callouts). Browse many documents at once with a folder tree and multiple tabs.
 
+## What it's for
+
+This viewer exists to **re-read notes distilled from conversations with an LLM**. Working
+through a system design or a research topic with AI quickly produces a pile of Markdown
+mixing math, diagrams, and cross-references. The goal is to read those documents
+**as the author intended, moving across a whole folder** rather than one file at a time.
+
+So the repository also includes a guide on **how to prompt an AI so the Markdown it
+produces renders correctly here** — a copy-paste prompt block, the exact supported syntax,
+the things LLMs often emit that will not render (raw HTML, among others), and file/folder
+conventions for notes that keep accumulating:
+
+**→ [[AI-AUTHORING|Writing Markdown with AI — authoring guide]]** (`docs/AI-AUTHORING.md`, written in Korean)
+
 ## Features
 
 - **Rich syntax support** — GFM (tables, task lists, strikethrough, footnotes), KaTeX math, Mermaid diagrams, code syntax highlighting, Obsidian wikilinks & callouts
