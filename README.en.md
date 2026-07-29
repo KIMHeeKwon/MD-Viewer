@@ -1,8 +1,8 @@
 # MD Viewer
 
-**한국어**: [[README]] · **English**: this document
+**한국어**: [README.md](README.md) · **English**: this document
 
-A **standalone desktop viewer** that renders Markdown the way the author intended. Runs on macOS and Windows, fully offline.
+A **standalone desktop viewer** that renders Markdown the way the author intended. Runs on macOS, Windows, and Linux, fully offline.
 
 Supports GitHub Flavored Markdown plus math (KaTeX), diagrams (Mermaid), syntax highlighting, and Obsidian extensions (`[[wikilinks]]`, callouts). Browse many documents at once with a folder tree and multiple tabs.
 
@@ -18,7 +18,10 @@ produces renders correctly here** — a copy-paste prompt block, the exact suppo
 the things LLMs often emit that will not render (raw HTML, among others), and file/folder
 conventions for notes that keep accumulating:
 
-**→ [[AI-AUTHORING|Writing Markdown with AI — authoring guide]]** (`docs/AI-AUTHORING.md`, written in Korean)
+**→ [Writing Markdown with AI — authoring guide](docs/AI-AUTHORING.md)** (written in Korean)
+
+A per-OS manual covering installation, usage, and shortcuts is also included:
+**→ [User guide (macOS · Windows · Linux)](docs/USER-GUIDE.md)** (written in Korean)
 
 ## Features
 
@@ -26,6 +29,7 @@ conventions for notes that keep accumulating:
 - **Folder tree + tabs** — Open a folder to see the document tree in the sidebar, and open documents in multiple tabs. Sidebar width is draggable and remembered
 - **Outline panel** — Heading list at the bottom of the sidebar; click to jump, with the current position tracked as you scroll
 - **Backlinks panel** — Lists documents that reference the current one via `[[wikilinks]]`; click to open them
+- **Link graph (⌘⇧G)** — Visualizes how documents in the folder connect. Click a node to open it, focus on the current document's neighbours, pan and zoom
 - **Drag and drop** — Drop a file or folder onto the window to open it
 - **Find in document (⌘F)** — Match highlighting, match count, previous/next navigation, with **regex** and **case-sensitive** options; **works in PDFs too**
 - **Reading width** — Choose narrow / normal / wide / full from the View menu (remembered)
@@ -47,6 +51,7 @@ Download the file for your platform from [Releases](https://github.com/KIMHeeKwo
 |----------|------|
 | macOS (Apple Silicon) | `MD-Viewer-<version>-arm64.dmg` |
 | Windows | `MD-Viewer-Setup-<version>.exe` |
+| Linux | `MD-Viewer-<version>.AppImage` (chmod +x, then run) or `.deb` |
 
 ### First-launch warnings (macOS)
 
@@ -68,6 +73,7 @@ On Windows, SmartScreen may show a "Windows protected your PC" dialog → click 
 | Open folder | ⌘O |
 | Find in document | ⌘F |
 | Project-wide search | ⌘⇧F |
+| Link graph | ⌘⇧G |
 | Export to PDF | ⌘E |
 | Export to HTML | ⌘⇧E |
 | Toggle theme | ⌘⇧L |
@@ -88,7 +94,7 @@ npm run bundle     # bundle the renderer with esbuild
 npm run dist       # build installers with electron-builder
 ```
 
-Pushing a `v*` tag triggers GitHub Actions to build macOS and Windows installers automatically.
+Pushing a `v*` tag triggers GitHub Actions to build macOS, Windows, and Linux installers automatically.
 
 ### Tech stack
 

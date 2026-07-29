@@ -12,6 +12,7 @@
     <aside id="sidebar">
       <div id="sidebar-head">
         <span id="root-name">폴더 없음</span>
+        <button id="btn-graph" title="연결 그래프 (⌘⇧G)">◎</button>
         <button id="btn-open" title="폴더 열기 (⌘O)">폴더 열기</button>
       </div>
       <nav id="tree" aria-label="문서 트리"></nav>
@@ -31,6 +32,18 @@
         <div id="empty-state">
           <p class="empty-title">MD Viewer</p>
           <p class="empty-hint">폴더를 열어 마크다운 문서를 탐색하세요 (⌘O)</p>
+        </div>
+        <div id="graphpanel" hidden>
+          <div class="gp-bar">
+            <span class="gp-title">연결 그래프</span>
+            <span id="gp-info"></span>
+            <span class="gp-spacer"></span>
+            <button id="gp-scope" title="전체 / 현재 문서 주변 전환">전체</button>
+            <button id="gp-relayout" title="다시 배치">재배치</button>
+            <button id="gp-close" title="닫기 (Esc)">×</button>
+          </div>
+          <canvas id="graph-canvas"></canvas>
+          <div class="gp-hint">노드 클릭 → 문서 열기 · 드래그 → 이동 · 휠 → 확대/축소</div>
         </div>
         <div id="searchpanel" hidden>
           <div class="sp-head">

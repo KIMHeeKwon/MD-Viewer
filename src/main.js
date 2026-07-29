@@ -130,6 +130,11 @@ function buildMenu() {
           click: () => win && win.webContents.send('menu:search-project'),
         },
         {
+          label: '연결 그래프…',
+          accelerator: 'CmdOrCtrl+Shift+G',
+          click: () => win && win.webContents.send('menu:graph'),
+        },
+        {
           label: '본문 글자 크기',
           submenu: [
             { label: '작게', click: () => win && win.webContents.send('menu:font-size', 13) },
@@ -241,6 +246,57 @@ ipcMain.handle('search:project', async (_e, { root, query }) => {
     if (matches.length) results.push({ path: f, name: path.basename(f), matches });
   }
   return { results, capped: total >= MAX_TOTAL };
+});
+
+// 폴더 전체의 위키링크 연결 관계를 노드·간선으로 수집 (연결 그래프)
+ipcMain.handle('graph:build', async (_e, { root }) => {
+  if (!root) return { nodes: [], edges: [], unresolved: 0 };
+
+  const files = [];
+  (function walk(dir, depth) {
+    if (depth > 8) return;
+    let entries;
+    try { entries = fs.readdirSync(dir, { withFileTypes: true }); } catch { return; }
+    for (const e of entries) {
+      if (e.name.startsWith('.') || e.name === 'node_modules') continue;
+      const full = path.join(dir, e.name);
+      if (e.isDirectory()) walk(full, depth + 1);
+      else if (/\.(md|markdown|mdown)$/i.test(e.name)) files.push(full);
+    }
+  })(root, 0);
+
+  const stripExt = (n) => n.replace(/\.(md|markdown|mdown)$/i, '');
+  // 파일명(확장자 제외, 소문자) → 경로. 위키링크는 파일명으로 해석된다.
+  const index = new Map();
+  for (const f of files) index.set(stripExt(path.basename(f)).toLowerCase(), f);
+
+  const nodes = files.map((f) => ({
+    path: f,
+    name: stripExt(path.basename(f)),
+    dir: path.dirname(f) === root ? '' : path.relative(root, path.dirname(f)),
+  }));
+
+  const edges = [];
+  const seen = new Set();
+  let unresolved = 0;
+  for (const f of files) {
+    let content;
+    try { content = fs.readFileSync(f, 'utf8'); } catch { continue; }
+    if (!content.includes('[[')) continue;
+    // 코드 블록·인라인 코드 안의 [[...]]는 문법 예시이므로 제외한다
+    const prose = content.replace(/```[\s\S]*?```/g, '').replace(/`[^`\n]*`/g, '');
+    for (const m of prose.matchAll(/\[\[([^\]\n|]+)(?:\|[^\]\n]*)?\]\]/g)) {
+      const key = stripExt(m[1].trim()).toLowerCase();
+      const target = index.get(key);
+      if (!target) { unresolved++; continue; }
+      if (target === f) continue; // 자기 참조 제외
+      const id = `${f} ${target}`;
+      if (seen.has(id)) continue;
+      seen.add(id);
+      edges.push({ from: f, to: target });
+    }
+  }
+  return { nodes, edges, unresolved };
 });
 
 // 이 문서를 [[위키링크]]로 참조하는 다른 문서 찾기 (백링크)

@@ -10,6 +10,7 @@ contextBridge.exposeInMainWorld('api', {
   exportHtml: (payload) => ipcRenderer.invoke('html:export', payload),
   searchProject: (root, query) => ipcRenderer.invoke('search:project', { root, query }),
   getBacklinks: (root, target) => ipcRenderer.invoke('links:backlinks', { root, target }),
+  buildGraph: (root) => ipcRenderer.invoke('graph:build', { root }),
   // 드롭된 File 객체의 실제 경로 (Electron 32+에서 File.path가 제거됨)
   pathForFile: (file) => webUtils.getPathForFile(file),
   onFileChanged: (cb) => ipcRenderer.on('file:changed', (_e, p) => cb(p)),
@@ -18,7 +19,7 @@ contextBridge.exposeInMainWorld('api', {
     const allowed = [
       'menu:open-folder', 'menu:toggle-theme', 'menu:export-pdf',
       'menu:find', 'menu:search-project', 'menu:read-width', 'menu:export-html',
-      'menu:font-size',
+      'menu:font-size', 'menu:graph',
     ];
     if (allowed.includes(channel)) {
       ipcRenderer.on(channel, (_e, ...args) => cb(...args));

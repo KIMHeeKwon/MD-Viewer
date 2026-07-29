@@ -6,6 +6,7 @@ import katex from 'katex';
 import hljs from 'highlight.js';
 import mermaid from 'mermaid';
 import * as pdfjsLib from 'pdfjs-dist';
+import { createGraphView } from './graph.js';
 
 import 'katex/dist/katex.min.css';
 import 'highlight.js/styles/tokyo-night-dark.css';
@@ -279,10 +280,28 @@ async function renderInto(pane, source, dir) {
     });
   }
 
-  // 헤딩에 id 부여 (아웃라인 점프 + 문서 내 앵커 링크용)
-  body.querySelectorAll('h1, h2, h3, h4, h5, h6').forEach((h, i) => {
-    if (!h.id) h.id = `hd-${i}-${slugify(h.textContent)}`;
+  // 헤딩에 id 부여 (아웃라인 점프 + 문서 내 앵커 링크용).
+  // 문서 내 목차(`](#헤딩)`)가 동작하도록 GitHub식 슬러그를 그대로 id로 쓴다.
+  // 같은 제목이 여러 번 나오면 뒤에 -1, -2를 붙여 구분한다.
+  const used = new Map();
+  body.querySelectorAll('h1, h2, h3, h4, h5, h6').forEach((h) => {
+    if (h.id) return;
+    const base = slugify(h.textContent);
+    const n = used.get(base) || 0;
+    used.set(base, n + 1);
+    h.id = n ? `${base}-${n}` : base;
   });
+
+  // 앵커 클릭을 가로채 해당 헤딩으로 스크롤한다 (탭 패널이 스크롤 컨테이너라 기본 동작이 불안정)
+  for (const a of body.querySelectorAll('a[href^="#"]')) {
+    a.addEventListener('click', (e) => {
+      const id = decodeURIComponent(a.getAttribute('href').slice(1));
+      const target = id && body.querySelector(`[id="${CSS.escape(id)}"]`);
+      if (!target) return;
+      e.preventDefault();
+      target.scrollIntoView({ block: 'start', behavior: 'smooth' });
+    });
+  }
 }
 
 /* ---------- 트리 ---------- */
@@ -1179,6 +1198,17 @@ window.api.onMenu('menu:export-pdf', exportPdf);
 window.api.onMenu('menu:export-html', exportHtml);
 window.api.onMenu('menu:find', openFind);
 window.api.onMenu('menu:search-project', openSearch);
+
+/* ---------- 연결 그래프 (⌘⇧G) ---------- */
+
+const graphView = createGraphView({
+  api: window.api,
+  getRoot: () => state.root,
+  getActivePath: () => state.active,
+  openFile,
+});
+window.api.onMenu('menu:graph', () => graphView.open());
+$('#btn-graph').addEventListener('click', () => graphView.open());
 
 /* ---------- 읽기 폭 ---------- */
 

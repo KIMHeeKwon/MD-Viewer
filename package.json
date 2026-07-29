@@ -47,6 +47,17 @@
     "win": {
       "target": "nsis",
       "icon": "build/icon.ico"
+    },
+    "linux": {
+      "target": ["AppImage", "deb"],
+      "icon": "build/icon.png",
+      "category": "Office;Viewer;TextEditor",
+      "synopsis": "단독 실행 마크다운 · PDF 뷰어",
+      "desktop": {
+        "entry": {
+          "MimeType": "text/markdown;text/x-markdown;application/pdf"
+        }
+      }
     }
   },
   "dependencies": {
