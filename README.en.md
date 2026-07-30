@@ -26,7 +26,8 @@ A per-OS manual covering installation, usage, and shortcuts is also included:
 ## Features
 
 - **Rich syntax support** — GFM (tables, task lists, strikethrough, footnotes), KaTeX math, Mermaid diagrams, code syntax highlighting, Obsidian wikilinks & callouts
-- **Folder tree + tabs** — Open a folder to see the document tree in the sidebar, and open documents in multiple tabs. Sidebar width is draggable and remembered
+- **Open a single file (⌘O)** — View one document quickly; select several and they all open as tabs
+- **Folder tree + tabs (⇧⌘O)** — Open a folder to see the document tree in the sidebar, and open documents in multiple tabs. Sidebar width is draggable and remembered
 - **Outline panel** — Heading list at the bottom of the sidebar; click to jump, with the current position tracked as you scroll
 - **Backlinks panel** — Lists documents that reference the current one via `[[wikilinks]]`; click to open them
 - **Link graph (⌘⇧G)** — Visualizes how documents in the folder connect. Click a node to open it, focus on the current document's neighbours, pan and zoom
@@ -71,7 +72,8 @@ On Windows, SmartScreen may show a "Windows protected your PC" dialog → click 
 
 | Action | Shortcut |
 |--------|----------|
-| Open folder | ⌘O |
+| Open file | ⌘O |
+| Open folder | ⇧⌘O |
 | Find in document | ⌘F |
 | Project-wide search | ⌘⇧F |
 | Link graph | ⌘⇧G |

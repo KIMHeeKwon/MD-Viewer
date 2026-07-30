@@ -2,6 +2,7 @@ const { contextBridge, ipcRenderer, webUtils } = require('electron');
 
 contextBridge.exposeInMainWorld('api', {
   openFolder: () => ipcRenderer.invoke('folder:open'),
+  openFiles: () => ipcRenderer.invoke('file:openDialog'),
   openFolderPath: (p) => ipcRenderer.invoke('folder:openPath', p),
   readFile: (p) => ipcRenderer.invoke('file:read', p),
   readFileBinary: (p) => ipcRenderer.invoke('file:readBinary', p),
@@ -21,7 +22,7 @@ contextBridge.exposeInMainWorld('api', {
   onOpenFile: (cb) => ipcRenderer.on('open-file', (_e, p) => cb(p)),
   onMenu: (channel, cb) => {
     const allowed = [
-      'menu:open-folder', 'menu:toggle-theme', 'menu:export-pdf',
+      'menu:open-folder', 'menu:open-files', 'menu:toggle-theme', 'menu:export-pdf',
       'menu:find', 'menu:search-project', 'menu:read-width', 'menu:export-html',
       'menu:font-size', 'menu:graph', 'menu:check-update',
     ];

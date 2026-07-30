@@ -272,6 +272,18 @@ body.resizing { cursor: col-resize; user-select: none; }
 }
 .empty-title { font-size: 22px; font-weight: 700; margin: 0; }
 .empty-hint { margin: 0; }
+.empty-actions { display: flex; gap: 10px; margin-top: 14px; }
+.empty-actions button {
+  border: 1px solid var(--line);
+  background: var(--soft);
+  color: var(--fg);
+  border-radius: 6px;
+  padding: 7px 16px;
+  cursor: pointer;
+  font-size: 13px;
+}
+.empty-actions button:hover { color: var(--accent); border-color: var(--accent); }
+.es-key { color: var(--dim); font-size: 11.5px; margin-left: 6px; }
 
 .doc-body {
   max-width: var(--read-width, 860px);

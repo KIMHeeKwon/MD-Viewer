@@ -22,7 +22,7 @@ function requestOpen(filePath) {
 
 // argv에서 실제 존재하는 마크다운 파일 경로를 추출 (Windows 더블클릭)
 function fileFromArgv(argv) {
-  return argv.find((a) => /\.(md|markdown|mdown)$/i.test(a) && fs.existsSync(a)) || null;
+  return argv.find((a) => /\.(md|markdown|mdown|pdf)$/i.test(a) && fs.existsSync(a)) || null;
 }
 
 function readTree(dir, depth = 0) {
@@ -97,8 +97,13 @@ function buildMenu() {
       label: '파일',
       submenu: [
         {
-          label: '폴더 열기…',
+          label: '파일 열기…',
           accelerator: 'CmdOrCtrl+O',
+          click: () => win && win.webContents.send('menu:open-files'),
+        },
+        {
+          label: '폴더 열기…',
+          accelerator: 'CmdOrCtrl+Shift+O',
           click: () => win && win.webContents.send('menu:open-folder'),
         },
         {
@@ -191,6 +196,19 @@ ipcMain.handle('folder:open', async () => {
   if (res.canceled || !res.filePaths.length) return null;
   const root = res.filePaths[0];
   return { root, name: path.basename(root), tree: readTree(root) };
+});
+
+// 파일 단위로 열기 — 여러 개 선택 가능
+ipcMain.handle('file:openDialog', async () => {
+  const res = await dialog.showOpenDialog(win, {
+    properties: ['openFile', 'multiSelections'],
+    filters: [
+      { name: '문서', extensions: ['md', 'markdown', 'mdown', 'pdf'] },
+      { name: '모든 파일', extensions: ['*'] },
+    ],
+  });
+  if (res.canceled || !res.filePaths.length) return null;
+  return { paths: res.filePaths };
 });
 
 // 대화상자 없이 경로로 폴더 스캔 (세션 복원용)
@@ -572,8 +590,9 @@ app.whenReady().then(() => {
   if (!gotSingleInstanceLock) return;
   createWindow();
   buildMenu();
-  // Windows 첫 실행 시 argv로 넘어온 파일 열기 (macOS는 open-file 이벤트가 담당)
-  if (!isMac && !pendingOpenPath) requestOpen(fileFromArgv(process.argv));
+  // 명령줄 인자로 넘어온 파일 열기 (`md-viewer 문서.md`).
+  // macOS에서 Finder 더블클릭은 open-file 이벤트로 오지만, 터미널 실행은 argv로 온다.
+  if (!pendingOpenPath) requestOpen(fileFromArgv(process.argv));
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();
   });

@@ -1091,6 +1091,14 @@ function loadFolder(res) {
   updateStatus();
 }
 
+// 파일 단위로 열기 — 여러 개를 고르면 모두 탭으로 열고 마지막 것을 활성화한다.
+// 폴더가 이미 열려 있으면 트리는 그대로 두고 탭만 추가한다.
+async function openFilesDialog() {
+  const res = await window.api.openFiles();
+  if (!res || !res.paths) return;
+  for (const p of res.paths) await openExternalFile(p);
+}
+
 async function openFolder() {
   const res = await window.api.openFolder();
   if (!res) return;
@@ -1197,8 +1205,11 @@ resizerEl.addEventListener('dblclick', () => {
 /* ---------- 이벤트 결선 ---------- */
 
 $('#btn-open').addEventListener('click', openFolder);
+$('#es-file').addEventListener('click', openFilesDialog);
+$('#es-folder').addEventListener('click', openFolder);
 $('#btn-theme').addEventListener('click', toggleTheme);
 window.api.onMenu('menu:open-folder', openFolder);
+window.api.onMenu('menu:open-files', openFilesDialog);
 window.api.onMenu('menu:toggle-theme', toggleTheme);
 window.api.onMenu('menu:export-pdf', exportPdf);
 window.api.onMenu('menu:export-html', exportHtml);
