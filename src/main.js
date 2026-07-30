@@ -349,6 +349,29 @@ ipcMain.handle('update:install', async () => {
 
 ipcMain.handle('update:openPage', async () => { shell.openExternal(RELEASES_PAGE); return true; });
 
+// 위키링크 해석 — 파일명이 중복될 수 있으므로 Obsidian처럼 우선순위를 둔다.
+// ① 링크를 쓴 문서와 같은 폴더 ② 후보가 하나면 그것 ③ 루트에 가까운 것(경로가 짧은 것)
+function buildNameIndex(files) {
+  const idx = new Map();
+  for (const f of files) {
+    const key = path.basename(f).replace(/\.(md|markdown|mdown)$/i, '').toLowerCase();
+    if (!idx.has(key)) idx.set(key, []);
+    idx.get(key).push(f);
+  }
+  return idx;
+}
+
+function resolveLink(fromFile, key, idx) {
+  const cands = idx.get(key);
+  if (!cands || !cands.length) return null;
+  if (cands.length === 1) return cands[0];
+  const dir = path.dirname(fromFile);
+  const sameDir = cands.find((c) => path.dirname(c) === dir);
+  if (sameDir) return sameDir;
+  return [...cands].sort((a, b) => a.split(path.sep).length - b.split(path.sep).length
+    || a.localeCompare(b))[0];
+}
+
 // 폴더 전체의 위키링크 연결 관계를 노드·간선으로 수집 (연결 그래프)
 ipcMain.handle('graph:build', async (_e, { root }) => {
   if (!root) return { nodes: [], edges: [], unresolved: 0 };
@@ -367,15 +390,15 @@ ipcMain.handle('graph:build', async (_e, { root }) => {
   })(root, 0);
 
   const stripExt = (n) => n.replace(/\.(md|markdown|mdown)$/i, '');
-  // 파일명(확장자 제외, 소문자) → 경로. 위키링크는 파일명으로 해석된다.
-  const index = new Map();
-  for (const f of files) index.set(stripExt(path.basename(f)).toLowerCase(), f);
+  const index = buildNameIndex(files);
 
-  const nodes = files.map((f) => ({
-    path: f,
-    name: stripExt(path.basename(f)),
-    dir: path.dirname(f) === root ? '' : path.relative(root, path.dirname(f)),
-  }));
+  const nodes = files.map((f) => {
+    const base = stripExt(path.basename(f));
+    const rel = path.dirname(f) === root ? '' : path.relative(root, path.dirname(f));
+    const dup = (index.get(base.toLowerCase()) || []).length > 1;
+    // 파일명이 중복되면 폴더를 덧붙여 그래프에서 구분되게 한다
+    return { path: f, name: dup && rel ? `${base} (${rel})` : base, dir: rel };
+  });
 
   const edges = [];
   const seen = new Set();
@@ -388,7 +411,7 @@ ipcMain.handle('graph:build', async (_e, { root }) => {
     const prose = content.replace(/```[\s\S]*?```/g, '').replace(/`[^`\n]*`/g, '');
     for (const m of prose.matchAll(/\[\[([^\]\n|]+)(?:\|[^\]\n]*)?\]\]/g)) {
       const key = stripExt(m[1].trim()).toLowerCase();
-      const target = index.get(key);
+      const target = resolveLink(f, key, index);
       if (!target) { unresolved++; continue; }
       if (target === f) continue; // 자기 참조 제외
       const id = `${f}\u0000${target}`;
@@ -418,6 +441,7 @@ ipcMain.handle('links:backlinks', async (_e, { root, target }) => {
     }
   })(root, 0);
 
+  const nameIndex = buildNameIndex(files);
   const results = [];
   for (const f of files) {
     if (f === target) continue; // 자기 자신 제외
@@ -429,7 +453,8 @@ ipcMain.handle('links:backlinks', async (_e, { root, target }) => {
     for (let i = 0; i < lines.length && matches.length < 10; i++) {
       for (const m of lines[i].matchAll(/\[\[([^\]\n|]+)(?:\|[^\]\n]*)?\]\]/g)) {
         const key = m[1].trim().replace(/\.(md|markdown|mdown)$/i, '').toLowerCase();
-        if (key === targetKey) {
+        // 같은 이름의 파일이 여럿일 수 있으니 그 링크가 실제로 이 문서를 가리키는지 확인한다
+        if (key === targetKey && resolveLink(f, key, nameIndex) === target) {
           matches.push({ line: i + 1, text: lines[i].trim().slice(0, 300) });
           break;
         }

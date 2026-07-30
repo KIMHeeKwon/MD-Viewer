@@ -1,12 +1,22 @@
 // 문서 간 위키링크 연결을 캔버스에 힘-지향(force-directed) 그래프로 그린다.
 // 외부 라이브러리 없이 구현한다 — 오프라인 동작과 번들 크기 요건 때문 (CLAUDE.md §2).
 
-const REPULSION = 9000;   // 노드끼리 밀어내는 힘
-const LINK_DIST = 90;     // 연결된 노드의 목표 거리
 const SPRING = 0.02;      // 간선의 탄성
-const GRAVITY = 0.012;    // 중앙으로 모으는 힘
+const GRAVITY = 0.012;    // 무게중심으로 모으는 힘
 const DAMPING = 0.82;     // 속도 감쇠
 const MIN_R = 4;          // 노드 최소 반지름
+const MAX_LABEL = 22;     // 라벨 표시 최대 글자 수
+
+const radiusOf = (n) => MIN_R + Math.min(9, n.deg * 1.6);
+
+// 힘은 문서 수에 맞춰 조정한다. 고정값을 쓰면 문서가 늘어날수록 스프링이 반발력을
+// 압도해 중앙으로 뭉치고 라벨이 겹쳐 읽을 수 없게 된다.
+function forceParams(n) {
+  return {
+    repulsion: 6000 + 420 * n,
+    linkDist: Math.min(240, 70 + 9 * Math.sqrt(n)),
+  };
+}
 
 export function createGraphView({ api, getRoot, getActivePath, openFile }) {
   const panel = document.querySelector('#graphpanel');
@@ -66,6 +76,7 @@ export function createGraphView({ api, getRoot, getActivePath, openFile }) {
   function tick() {
     const vis = visibleSet();
     const act = vis ? nodes.filter((n) => vis.has(n)) : nodes;
+    const { repulsion, linkDist } = forceParams(act.length);
 
     for (let i = 0; i < act.length; i++) {
       const a = act[i];
@@ -74,19 +85,30 @@ export function createGraphView({ api, getRoot, getActivePath, openFile }) {
         let dx = a.x - b.x, dy = a.y - b.y;
         let d2 = dx * dx + dy * dy;
         if (d2 < 1) { d2 = 1; dx = (Math.random() - 0.5); dy = (Math.random() - 0.5); }
-        const f = REPULSION / d2;
+        const f = repulsion / d2;
         const d = Math.sqrt(d2);
         const fx = (dx / d) * f, fy = (dy / d) * f;
         a.vx += fx; a.vy += fy; b.vx -= fx; b.vy -= fy;
+        // 원이 시각적으로 겹치면 추가로 밀어낸다 (반발력만으로는 붙어 있는 쌍이 남는다)
+        const minGap = radiusOf(a) + radiusOf(b) + 8;
+        if (d < minGap) {
+          const push = (minGap - d) * 0.5;
+          a.vx += (dx / d) * push; a.vy += (dy / d) * push;
+          b.vx -= (dx / d) * push; b.vy -= (dy / d) * push;
+        }
       }
     }
     for (const e of edges) {
       if (vis && (!vis.has(e.a) || !vis.has(e.b))) continue;
       const dx = e.b.x - e.a.x, dy = e.b.y - e.a.y;
       const d = Math.max(1, Math.hypot(dx, dy));
-      const f = (d - LINK_DIST) * SPRING;
+      const f = (d - linkDist) * SPRING;
       const fx = (dx / d) * f, fy = (dy / d) * f;
-      e.a.vx += fx; e.a.vy += fy; e.b.vx -= fx; e.b.vy -= fy;
+      // 연결이 많은 노드는 간선 힘을 그만큼 나눠 받는다 — 그러지 않으면 허브가
+      // 모든 스프링에 끌려 중앙에 박히고 주변이 그 위로 겹친다.
+      const wa = 1 / Math.sqrt(1 + e.a.deg), wb = 1 / Math.sqrt(1 + e.b.deg);
+      e.a.vx += fx * wa; e.a.vy += fy * wa;
+      e.b.vx -= fx * wb; e.b.vy -= fy * wb;
     }
     // 중력은 클러스터 자신의 무게중심을 향한다 — 캔버스 중심을 쓰면 자동 맞춤(fit)으로
     // 화면 배율·위치가 바뀐 뒤 노드가 계속 흘러 프레이밍이 어긋난다.
@@ -123,26 +145,26 @@ export function createGraphView({ api, getRoot, getActivePath, openFile }) {
       }
     }
 
-    // 간선
+    // 간선 — 수가 많으면 흐리게 그린다. 진하게 두면 배경을 뒤덮어 구조가 안 보인다.
+    const shown = vis ? edges.filter((e) => vis.has(e.a) && vis.has(e.b)) : edges;
+    const edgeAlpha = Math.max(0.14, Math.min(0.5, 80 / Math.max(1, shown.length)));
     ctx.lineWidth = 1 / view.k;
-    for (const e of edges) {
-      if (vis && (!vis.has(e.a) || !vis.has(e.b))) continue;
+    for (const e of shown) {
       const on = hover && (e.a === hover || e.b === hover);
       ctx.strokeStyle = on ? t.accent : t.line;
-      ctx.globalAlpha = hover ? (on ? 0.9 : 0.15) : 0.55;
+      ctx.globalAlpha = hover ? (on ? 0.95 : edgeAlpha * 0.4) : edgeAlpha;
       ctx.beginPath();
       ctx.moveTo(e.a.x, e.a.y);
       ctx.lineTo(e.b.x, e.b.y);
       ctx.stroke();
     }
 
-    // 노드 + 라벨
+    // 노드
     ctx.globalAlpha = 1;
-    const showLabel = view.k > 0.55;
-    for (const n of nodes) {
-      if (vis && !vis.has(n)) continue;
+    const drawn = vis ? nodes.filter((n) => vis.has(n)) : nodes;
+    for (const n of drawn) {
       const dimmed = hover && !nbr.has(n);
-      const r = MIN_R + Math.min(9, n.deg * 1.6);
+      const r = radiusOf(n);
       ctx.globalAlpha = dimmed ? 0.2 : 1;
       ctx.beginPath();
       ctx.arc(n.x, n.y, r, 0, Math.PI * 2);
@@ -153,12 +175,35 @@ export function createGraphView({ api, getRoot, getActivePath, openFile }) {
         ctx.lineWidth = 2 / view.k;
         ctx.stroke();
       }
-      if (showLabel || n === hover || n === cur) {
-        ctx.fillStyle = dimmed ? t.dim : t.fg;
-        ctx.font = `${12 / view.k}px -apple-system, "Segoe UI", "Apple SD Gothic Neo", sans-serif`;
-        ctx.textAlign = 'center';
-        ctx.fillText(n.name, n.x, n.y - r - 4 / view.k);
-      }
+    }
+
+    // 라벨 — 겹치면 생략한다. 연결이 많은 문서부터 자리를 잡고,
+    // 현재 문서와 마우스가 올라간 문서는 항상 표시한다.
+    const fontPx = 12 / view.k;
+    ctx.font = `${fontPx}px -apple-system, "Segoe UI", "Apple SD Gothic Neo", sans-serif`;
+    ctx.textAlign = 'center';
+    // 노드 원을 먼저 점유 영역으로 넣어 라벨이 다른 노드를 덮지 않게 한다
+    const boxes = drawn.map((n) => {
+      const r = radiusOf(n);
+      return { x0: n.x - r, y0: n.y - r, x1: n.x + r, y1: n.y + r };
+    });
+    const order = [...drawn].sort((a, b) => {
+      const pri = (n) => (n === hover ? 3 : n === cur ? 2 : 0);
+      return (pri(b) - pri(a)) || (b.deg - a.deg);
+    });
+    for (const n of order) {
+      const must = n === hover || n === cur;
+      const label = n.name.length > MAX_LABEL ? `${n.name.slice(0, MAX_LABEL - 1)}…` : n.name;
+      const w = ctx.measureText(label).width;
+      const r = radiusOf(n);
+      const cx0 = n.x - w / 2, cy0 = n.y - r - 4 / view.k - fontPx;
+      const box = { x0: cx0, y0: cy0, x1: cx0 + w, y1: cy0 + fontPx * 1.2 };
+      const hit = boxes.some((b) => !(box.x1 < b.x0 || box.x0 > b.x1 || box.y1 < b.y0 || box.y0 > b.y1));
+      if (hit && !must) continue;
+      boxes.push(box);
+      ctx.globalAlpha = (hover && !nbr.has(n)) ? 0.25 : 1;
+      ctx.fillStyle = n === cur ? t.accent : t.fg;
+      ctx.fillText(label, n.x, n.y - r - 4 / view.k);
     }
     ctx.restore();
   }
