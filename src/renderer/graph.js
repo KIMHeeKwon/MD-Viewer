@@ -40,6 +40,8 @@ export function createGraphView({ api, getRoot, getActivePath, openFile }) {
   let unresolved = 0;
   let ticks = 0;
   let fitAt = [];     // 자동 맞춤을 실행할 틱 시점들 (배치가 흐른 뒤 한 번 더 잡는다)
+  let alpha = 1;      // 냉각 계수 — 0으로 수렴하며 배치가 멈춘다
+  let settled = false;// 배치 완료. 이후에는 물리 계산을 하지 않고 그림만 그린다
 
   function resize() {
     const dpr = window.devicePixelRatio || 1;
@@ -118,9 +120,23 @@ export function createGraphView({ api, getRoot, getActivePath, openFile }) {
     for (const n of act) {
       n.vx += (cx - n.x) * GRAVITY;
       n.vy += (cy - n.y) * GRAVITY;
+    }
+
+    // 간선 힘을 차수로 나누면 작용·반작용이 깨져 전체에 운동량이 남고 그래프가 한쪽으로
+    // 계속 흐른다. 평균 속도를 빼서 그 표류만 제거한다 (내부 상대 운동은 그대로).
+    const movable = act.filter((n) => n !== dragNode && !n.pinned);
+    if (movable.length) {
+      let mx = 0, my = 0;
+      for (const n of movable) { mx += n.vx; my += n.vy; }
+      mx /= movable.length; my /= movable.length;
+      for (const n of movable) { n.vx -= mx; n.vy -= my; }
+    }
+
+    for (const n of act) {
       if (n === dragNode || n.pinned) { n.vx = 0; n.vy = 0; continue; }
       n.vx *= DAMPING; n.vy *= DAMPING;
-      n.x += n.vx; n.y += n.vy;
+      // 냉각 계수를 곱해 시간이 지나면 움직임이 멎는다
+      n.x += n.vx * alpha; n.y += n.vy * alpha;
     }
   }
 
@@ -228,11 +244,21 @@ export function createGraphView({ api, getRoot, getActivePath, openFile }) {
   }
 
   function loop() {
-    tick();
-    ticks++;
-    if (fitAt.length && ticks >= fitAt[0]) { fitAt.shift(); fitToView(); }
+    if (!settled) {
+      tick();
+      ticks++;
+      alpha *= 0.977;                 // 약 300틱에 걸쳐 0으로 수렴
+      if (fitAt.length && ticks >= fitAt[0]) { fitAt.shift(); fitToView(); }
+      if (alpha < 0.002 && !fitAt.length) { settled = true; alpha = 0; }
+    }
     draw();
     raf = requestAnimationFrame(loop);
+  }
+
+  // 드래그·재배치처럼 배치를 다시 흔들어야 할 때 물리 계산을 되살린다
+  function reheat(strength = 1) {
+    alpha = strength;
+    settled = false;
   }
 
   function toWorld(ev) {
@@ -277,6 +303,7 @@ export function createGraphView({ api, getRoot, getActivePath, openFile }) {
     view = { x: 0, y: 0, k: 1 };
     ticks = 0;
     fitAt = [140, 340];
+    reheat(1);
   }
 
   async function open() {
@@ -317,7 +344,7 @@ export function createGraphView({ api, getRoot, getActivePath, openFile }) {
   canvas.addEventListener('mousedown', (ev) => {
     const p = toWorld(ev);
     const n = hitTest(p);
-    if (n) { dragNode = n; n.pinned = true; }
+    if (n) { dragNode = n; n.pinned = true; reheat(0.35); }
     else { panning = true; }
     last = { x: ev.clientX, y: ev.clientY };
   });
@@ -359,7 +386,7 @@ export function createGraphView({ api, getRoot, getActivePath, openFile }) {
 
   btnScope.addEventListener('click', () => {
     scope = scope === 'all' ? 'local' : 'all';
-    ticks = 0; fitAt = [90, 260]; // 범위가 바뀌면 다시 안정화 후 맞춤
+    ticks = 0; fitAt = [90, 260]; reheat(1); // 범위가 바뀌면 다시 안정화 후 맞춤
     btnScope.textContent = scope === 'all' ? '전체' : '현재 문서 주변';
     btnScope.classList.toggle('on', scope === 'local');
     updateInfo();
