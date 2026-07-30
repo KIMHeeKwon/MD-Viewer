@@ -438,7 +438,21 @@ body.resizing { cursor: col-resize; user-select: none; }
   font-size: 12px;
 }
 .pdf-toolbar button:hover { color: var(--accent); }
-.pdf-pageinfo, .pdf-zoominfo { color: var(--dim); min-width: 52px; text-align: center; }
+.pdf-zoominfo { color: var(--dim); min-width: 52px; text-align: center; }
+.pdf-pageinput {
+  width: 38px;
+  text-align: center;
+  background: var(--bg);
+  color: var(--fg);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  padding: 2px 4px;
+  font-family: inherit;
+  font-size: 12px;
+  outline: none;
+}
+.pdf-pageinput:focus { border-color: var(--accent); }
+.pdf-pagetotal { color: var(--dim); }
 .pdf-sep { width: 1px; height: 16px; background: var(--line); margin: 0 4px; }
 .pdf-page-wrap {
   position: relative;

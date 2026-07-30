@@ -140,7 +140,9 @@ async function renderPdfInto(pane, path, tab) {
     bar.className = 'pdf-toolbar';
     bar.innerHTML = `
       <button data-act="prev" title="이전 페이지">◀</button>
-      <span class="pdf-pageinfo">1 / ${doc.numPages}</span>
+      <input class="pdf-pageinput" type="text" inputmode="numeric" value="1"
+             title="페이지 번호를 입력하고 Enter" aria-label="페이지 번호">
+      <span class="pdf-pagetotal">/ ${doc.numPages}</span>
       <button data-act="next" title="다음 페이지">▶</button>
       <span class="pdf-sep"></span>
       <button data-act="out" title="축소">−</button>
@@ -160,6 +162,27 @@ async function renderPdfInto(pane, path, tab) {
         if (tab.pdfZoom !== prevZoom) rerenderPdf(tab, pane);
       }
     });
+
+    // 페이지 번호 직접 입력 — Enter로 이동, 벗어나면 현재 페이지로 되돌린다
+    const pageInput = bar.querySelector('.pdf-pageinput');
+    pageInput.addEventListener('focus', () => pageInput.select());
+    pageInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        const n = parseInt(pageInput.value.replace(/[^0-9]/g, ''), 10);
+        if (Number.isFinite(n)) {
+          goToPdfPage(tab, pane, n - 1);
+          pageInput.blur();
+        } else {
+          syncPdfPageInput(tab, pane, true); // 숫자가 아니면 원래 값 복구
+        }
+      } else if (e.key === 'Escape') {
+        e.preventDefault();
+        pageInput.blur();
+        syncPdfPageInput(tab, pane, true);
+      }
+    });
+    pageInput.addEventListener('blur', () => syncPdfPageInput(tab, pane, true));
 
     pane.addEventListener('scroll', () => updatePdfPageInfo(tab, pane));
     await renderPdfPages(tab);
@@ -234,18 +257,31 @@ function currentPdfPage(tab, pane) {
   return Math.max(0, pages.length - 1);
 }
 
-function movePdfPage(tab, pane, delta) {
+// 0-기반 인덱스로 해당 페이지로 스크롤
+function goToPdfPage(tab, pane, index) {
   const pages = [...tab.pdfScroll.querySelectorAll('.pdf-page-wrap')];
   if (!pages.length) return;
-  const next = Math.min(pages.length - 1, Math.max(0, currentPdfPage(tab, pane) + delta));
-  pane.scrollTop = pages[next].offsetTop - 64;
-  updatePdfPageInfo(tab, pane);
+  const i = Math.min(pages.length - 1, Math.max(0, index));
+  pane.scrollTop = pages[i].offsetTop - 64;
+  syncPdfPageInput(tab, pane, true);
 }
 
+function movePdfPage(tab, pane, delta) {
+  goToPdfPage(tab, pane, currentPdfPage(tab, pane) + delta);
+}
+
+// force=true면 입력 중이어도 현재 페이지로 덮어쓴다.
+// (명시적 이동이나 잘못된 입력 복구는 사용자가 타이핑 중이어도 반영돼야 한다)
+function syncPdfPageInput(tab, pane, force = false) {
+  const input = tab.pdfScroll && tab.pdfScroll.querySelector('.pdf-pageinput');
+  if (!input || !tab.pdfDoc) return;
+  if (!force && document.activeElement === input) return;
+  input.value = String(currentPdfPage(tab, pane) + 1);
+}
+
+// 스크롤에 따른 갱신 — 입력 중에는 건드리지 않는다
 function updatePdfPageInfo(tab, pane) {
-  const info = tab.pdfScroll && tab.pdfScroll.querySelector('.pdf-pageinfo');
-  if (!info || !tab.pdfDoc) return;
-  info.textContent = `${currentPdfPage(tab, pane) + 1} / ${tab.pdfDoc.numPages}`;
+  syncPdfPageInput(tab, pane, false);
 }
 
 /* ---------- 렌더링 ---------- */

@@ -1,7 +1,7 @@
 {
   "name": "md-viewer",
   "productName": "MD Viewer",
-  "version": "0.10.0",
+  "version": "0.10.1",
   "description": "단독 실행 마크다운 뷰어 — GFM + KaTeX + Mermaid + Obsidian 확장",
   "author": "KIMHeeKwon <hkkim79@gmail.com>",
   "license": "MIT",
