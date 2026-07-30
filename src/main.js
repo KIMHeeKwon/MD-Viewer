@@ -391,7 +391,7 @@ ipcMain.handle('graph:build', async (_e, { root }) => {
       const target = index.get(key);
       if (!target) { unresolved++; continue; }
       if (target === f) continue; // 자기 참조 제외
-      const id = `${f} ${target}`;
+      const id = `${f}\u0000${target}`;
       if (seen.has(id)) continue;
       seen.add(id);
       edges.push({ from: f, to: target });
