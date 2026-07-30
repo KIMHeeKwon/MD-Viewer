@@ -98,6 +98,10 @@ const state = {
   fileIndex: new Map(),// 소문자 파일명(확장자 제외) -> path (위키링크 해석용)
 };
 
+// 그래프 패널을 닫는 훅 — graphView가 만들어진 뒤 실제 구현으로 교체된다
+// (activateTab이 graphView보다 먼저 호출될 수 있어 직접 참조하면 초기화 전 접근이 된다)
+let closeGraphIfOpen = () => {};
+
 const $ = (sel) => document.querySelector(sel);
 const treeEl = $('#tree');
 const tabbarEl = $('#tabbar');
@@ -403,6 +407,8 @@ function activateTab(path) {
     tab.pane.classList.toggle('active', tab.path === path);
   }
   emptyEl.style.display = state.tabs.length ? 'none' : '';
+  // 문서를 열면 그래프 패널은 비켜준다 (트리·탭·백링크 등 어느 경로로 열어도)
+  closeGraphIfOpen();
   renderTabs();
   markActiveInTree();
   updateStatus();
@@ -1207,6 +1213,7 @@ const graphView = createGraphView({
   getActivePath: () => state.active,
   openFile,
 });
+closeGraphIfOpen = () => { if (graphView.isOpen()) graphView.close(); };
 window.api.onMenu('menu:graph', () => graphView.open());
 $('#btn-graph').addEventListener('click', () => graphView.open());
 
