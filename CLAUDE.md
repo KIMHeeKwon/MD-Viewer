@@ -43,6 +43,7 @@ GitHub 웹에서 링크로 동작해야 한다는 판단(사용자 승인, 2026-
 
 ```bash
 npm start          # 렌더러 번들 후 Electron 실행
+npm test           # 편집 저장 계산(순수 함수) 검증
 npm run bundle     # 렌더러만 번들
 npm run dist       # 설치 파일 생성 (dist/)
 ```
@@ -60,6 +61,10 @@ npm run dist       # 설치 파일 생성 (dist/)
 3. **사용자 조작 경로(닫기·삭제·취소)의 정리 코드는 try/catch로 감싼다.**
    자원 해제 실패가 조작을 막아서는 안 된다.
 4. **라이브러리 생명주기 API(`destroy`·`cleanup`)는 해당 버전에 존재하는지 확인한다.**
+5. **사용자 문서에 쓰는 계산은 순수 함수로 분리하고 Node에서 단독 검증한다.**
+   편집 기능의 실패 최악은 "안 보임"이 아니라 **문서 손실**이다. GUI 검증(CDP)으로는
+   줄 계산의 엣지 케이스를 덮을 수 없다 — `src/renderer/edit-core.mjs` + `npm test`
+   ([[DECISIONS|D29]]).
 
 ## 5. GUI 검증 수단
 

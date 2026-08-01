@@ -3,6 +3,7 @@
 **한국어**: [README.md](README.md) · **English**: this document
 
 A **standalone desktop viewer** that renders Markdown the way the author intended. Runs on macOS, Windows, and Linux, fully offline.
+It is a **reading-first viewer** — read-only by default, with an edit mode you turn on only when you need to fix something.
 
 Supports GitHub Flavored Markdown plus math (KaTeX), diagrams (Mermaid), syntax highlighting, and Obsidian extensions (`[[wikilinks]]`, callouts). Browse many documents at once with a folder tree and multiple tabs.
 
@@ -40,6 +41,7 @@ A per-OS manual covering installation, usage, and shortcuts is also included:
 - **File association** — Double-click a `.md` file in Finder/Explorer to open it in MD Viewer (active after install)
 - **PDF** — View PDF files (integrated into the app theme, with page navigation, **jump by page number**, zoom, and text selection & search) and export Markdown to PDF (⌘E, always output in light theme)
 - **HTML export (⌘⇧E)** — A **single self-contained HTML file** with styles, math fonts, and images embedded; opens identically in any browser, offline
+- **Edit mode (⌘⌥E)** — Read-only by default. Turn it on and **double-click any block** — paragraph, table, code fence — to edit its Markdown source in place; leaving the box saves and re-renders automatically. **Revert** in the status bar restores the document to how it was when opened
 - **File watching** — Automatically re-renders when a document is saved from an external editor (VS Code, Obsidian, etc.)
 - **Dark / light theme** (⌘⇧L)
 - **Offline rendering** — Fonts and scripts are bundled, so documents look identical without a network
@@ -72,6 +74,7 @@ On Windows, SmartScreen may show a "Windows protected your PC" dialog → click 
 
 | Action | Shortcut |
 |--------|----------|
+| Toggle edit mode | ⌘⌥E |
 | Open file | ⌘O |
 | Open folder | ⇧⌘O |
 | Find in document | ⌘F |

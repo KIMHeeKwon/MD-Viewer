@@ -7,6 +7,7 @@ import hljs from 'highlight.js';
 import mermaid from 'mermaid';
 import * as pdfjsLib from 'pdfjs-dist';
 import { createGraphView } from './graph.js';
+import { detectEol, normalizeEol, applyEol, trimBlankTail, sliceBlock, replaceBlock } from './edit-core.mjs';
 
 import 'katex/dist/katex.min.css';
 import 'highlight.js/styles/tokyo-night-dark.css';
@@ -70,6 +71,18 @@ function calloutPlugin(md) {
   };
 }
 
+// 블록 토큰에 원문 줄 범위를 심는다 — 인라인 편집이 "화면의 이 블록 = 원문의 몇 줄"을 알기 위한 것.
+// level 0(최상위)만 대상으로 해서 리스트 항목·표 셀이 아니라 리스트·표 전체가 한 블록이 된다.
+function srcLinePlugin(md) {
+  md.core.ruler.push('src-line', (state) => {
+    for (const t of state.tokens) {
+      if (t.level !== 0 || t.nesting < 0 || !t.map) continue;
+      t.attrSet('data-src-start', String(t.map[0]));
+      t.attrSet('data-src-end', String(t.map[1]));
+    }
+  });
+}
+
 const md = new MarkdownIt({
   html: false,
   linkify: true,
@@ -84,7 +97,8 @@ const md = new MarkdownIt({
   .use(footnote)
   .use(texmath, { engine: katex, delimiters: 'dollars', katexOptions: { throwOnError: false } })
   .use(wikilinkPlugin)
-  .use(calloutPlugin);
+  .use(calloutPlugin)
+  .use(srcLinePlugin);
 
 /* ---------- 상태 ---------- */
 
@@ -95,6 +109,7 @@ const state = {
   tabs: [],            // { path, name, dir, pane, source }
   active: null,        // path
   theme: 'dark',
+  editMode: false,     // 기본은 읽기 전용 — 켜야 편집이 열린다
   fileIndex: new Map(),// 소문자 파일명(확장자 제외) -> path (위키링크 해석용)
 };
 
@@ -290,6 +305,15 @@ async function renderInto(pane, source, dir) {
   const body = pane.querySelector('.doc-body');
   body.innerHTML = md.render(source);
 
+  // 코드 펜스는 markdown-it이 속성을 <code>에 붙인다 — 블록 전체가 편집 대상이 되도록 <pre>로 올린다
+  for (const code of body.querySelectorAll('pre > code[data-src-start]')) {
+    const pre = code.parentElement;
+    pre.dataset.srcStart = code.dataset.srcStart;
+    pre.dataset.srcEnd = code.dataset.srcEnd;
+    delete code.dataset.srcStart;
+    delete code.dataset.srcEnd;
+  }
+
   // 이미지 상대 경로를 문서 위치 기준 절대 file:// 로 재작성
   for (const img of body.querySelectorAll('img')) {
     const src = img.getAttribute('src') || '';
@@ -306,7 +330,13 @@ async function renderInto(pane, source, dir) {
       div.className = 'mermaid';
       div.id = `mmd-${mermaidSeq++}`;
       div.textContent = block.textContent;
-      block.closest('pre').replaceWith(div);
+      const pre = block.closest('pre');
+      // 다이어그램으로 바뀐 뒤에도 원문 줄 범위를 잃지 않아야 편집할 수 있다
+      if (pre.dataset.srcStart) {
+        div.dataset.srcStart = pre.dataset.srcStart;
+        div.dataset.srcEnd = pre.dataset.srcEnd;
+      }
+      pre.replaceWith(div);
     }
     try { await mermaid.run({ nodes: body.querySelectorAll('.mermaid') }); } catch { /* 문법 오류 시 원문 노출 */ }
   }
@@ -343,6 +373,119 @@ async function renderInto(pane, source, dir) {
     });
   }
 }
+
+/* ---------- 편집 (⌘⌥E로 켜는 모드 안에서만 동작) ---------- */
+
+// 편집 중인 블록. 한 번에 하나만 열린다.
+let blockEdit = null;   // { tab, textarea, start, end, original, closing }
+
+async function rerenderTab(tab) {
+  const scroll = tab.pane.scrollTop;
+  await renderInto(tab.pane, tab.source, tab.dir);
+  tab.pane.scrollTop = scroll;
+  if (tab.path === state.active) { updateStatus(); refreshFind(); refreshOutline(); refreshBacklinks(); }
+  syncEditUi();
+}
+
+function setEditMode(on) {
+  state.editMode = on;
+  localStorage.setItem('editMode', on ? '1' : '0');
+  document.body.classList.toggle('edit-mode', on);
+  if (!on) closeBlockEditor(true);
+  syncEditUi();
+}
+
+function syncEditUi() {
+  const btn = $('#st-edit');
+  btn.textContent = state.editMode ? '편집' : '읽기';
+  btn.classList.toggle('on', state.editMode);
+  const tab = activeTab();
+  $('#st-revert').hidden = !tab || tab.isPdf || tab.source === tab.original;
+}
+
+function setEditNote(msg) {
+  const el = $('#st-note');
+  el.textContent = msg || '';
+  el.hidden = !msg;
+}
+
+function autoGrow(ta) {
+  ta.style.height = 'auto';
+  ta.style.height = `${ta.scrollHeight}px`;
+}
+
+function openBlockEditor(tab, el) {
+  if (blockEdit) return;
+  const rawStart = Number(el.dataset.srcStart);
+  const rawEnd = Number(el.dataset.srcEnd);
+  if (!Number.isFinite(rawStart) || !Number.isFinite(rawEnd)) return;
+  const [start, end] = trimBlankTail(tab.source, rawStart, rawEnd);
+
+  const ta = document.createElement('textarea');
+  ta.className = 'block-editor';
+  ta.spellcheck = false;
+  ta.value = sliceBlock(tab.source, start, end);
+  el.replaceWith(ta);
+  blockEdit = { tab, textarea: ta, start, end, original: ta.value, closing: false };
+
+  autoGrow(ta);
+  ta.focus();
+  ta.setSelectionRange(ta.value.length, ta.value.length);
+  ta.addEventListener('input', () => autoGrow(ta));
+  ta.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') { e.preventDefault(); closeBlockEditor(false); }
+  });
+  ta.addEventListener('blur', () => closeBlockEditor(true));
+}
+
+// save=false면 고친 내용을 버린다. 어느 쪽이든 편집창은 사라지고 문서가 다시 렌더링된다.
+// 저장에 실패했을 때만 편집창을 남긴다 — 사용자가 쓴 글을 잃게 두지 않기 위해서다.
+async function closeBlockEditor(save) {
+  if (!blockEdit || blockEdit.closing) return;
+  const be = blockEdit;
+  be.closing = true;
+  const text = be.textarea.value;
+
+  if (!save || text === be.original) {
+    blockEdit = null;
+    await rerenderTab(be.tab);
+    return;
+  }
+
+  const next = replaceBlock(be.tab.source, be.start, be.end, text);
+  const res = await window.api.writeFile(be.tab.path, applyEol(next, be.tab.eol));
+  if (res && res.error) {
+    be.closing = false;
+    setEditNote(`저장 실패: ${res.error}`);
+    be.textarea.focus();
+    return;
+  }
+  blockEdit = null;
+  setEditNote('');
+  be.tab.source = next;
+  await rerenderTab(be.tab);
+}
+
+async function revertTab() {
+  const tab = activeTab();
+  if (!tab || tab.isPdf || tab.source === tab.original) return;
+  if (!confirm(`"${tab.name}"을(를) 문서를 연 시점으로 되돌립니다.\n그 뒤에 고친 내용은 사라집니다.`)) return;
+  const res = await window.api.writeFile(tab.path, applyEol(tab.original, tab.eol));
+  if (res && res.error) { setEditNote(`되돌리기 실패: ${res.error}`); return; }
+  tab.source = tab.original;
+  await rerenderTab(tab);
+}
+
+// 편집 진입은 더블클릭 하나뿐이다 — 편집 모드가 꺼져 있으면 지금처럼 단어 선택으로 남는다.
+docsEl.addEventListener('dblclick', (e) => {
+  if (!state.editMode || blockEdit) return;
+  const tab = activeTab();
+  if (!tab || tab.isPdf) return;
+  const el = e.target.closest('[data-src-start]');
+  if (!el || !tab.pane.contains(el)) return;
+  e.preventDefault();
+  openBlockEditor(tab, el);
+});
 
 /* ---------- 트리 ---------- */
 
@@ -438,6 +581,8 @@ tabbarEl.addEventListener('wheel', (e) => {
 }, { passive: false });
 
 function activateTab(path) {
+  // 편집 중인 블록은 탭을 떠나기 전에 확정한다 — 미저장 상태가 탭 밖으로 새지 않게
+  closeBlockEditor(true);
   state.active = path;
   for (const tab of state.tabs) {
     tab.pane.classList.toggle('active', tab.path === path);
@@ -451,6 +596,7 @@ function activateTab(path) {
   refreshFind();
   refreshOutline();
   refreshBacklinks();
+  syncEditUi();
   saveSession();
 }
 
@@ -500,7 +646,10 @@ async function openFile(path) {
     body.className = 'doc-body';
     pane.append(body);
     docsEl.append(pane);
-    const tab = { path, name, dir, pane, source: res.content, isPdf: false };
+    // source는 LF로 정규화해 두고(줄 번호 계산의 기준), 파일의 원래 줄바꿈 방식은 저장할 때 되돌린다.
+    // original은 "문서를 연 시점"으로 되돌리기의 기준점이다.
+    const source = normalizeEol(res.content);
+    const tab = { path, name, dir, pane, source, original: source, eol: detectEol(res.content), isPdf: false };
     state.tabs.push(tab);
     pane.addEventListener('scroll', () => { if (state.active === path) updateOutlineActive(tab); });
     await renderInto(pane, res.content, dir);
@@ -1192,11 +1341,12 @@ window.api.onFileChanged(async (path) => {
   if (!tab) return;
   const res = await window.api.readFile(path);
   if (res.error) return;
-  tab.source = res.content;
-  const scroll = tab.pane.scrollTop;
-  await renderInto(tab.pane, tab.source, tab.dir);
-  tab.pane.scrollTop = scroll;
-  if (tab.path === state.active) { updateStatus(); refreshFind(); refreshOutline(); refreshBacklinks(); }
+  // 외부에서 바뀐 문서다 (앱이 쓴 저장은 main에서 걸러진다).
+  // 되돌리기의 기준점도 새 내용으로 옮긴다 — 남의 편집까지 되돌리면 안 되기 때문이다.
+  tab.source = normalizeEol(res.content);
+  tab.original = tab.source;
+  tab.eol = detectEol(res.content);
+  await rerenderTab(tab);
 });
 
 /* ---------- 이벤트 결선 ---------- */
@@ -1244,6 +1394,10 @@ $('#btn-open').addEventListener('click', openFolder);
 $('#es-file').addEventListener('click', openFilesDialog);
 $('#es-folder').addEventListener('click', openFolder);
 $('#btn-theme').addEventListener('click', toggleTheme);
+$('#st-edit').addEventListener('click', () => setEditMode(!state.editMode));
+$('#st-revert').addEventListener('click', revertTab);
+window.api.onMenu('menu:toggle-edit', () => setEditMode(!state.editMode));
+setEditMode(localStorage.getItem('editMode') === '1');
 window.api.onMenu('menu:open-folder', openFolder);
 window.api.onMenu('menu:open-files', openFilesDialog);
 window.api.onMenu('menu:toggle-theme', toggleTheme);

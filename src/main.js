@@ -125,6 +125,12 @@ function buildMenu() {
       label: '보기',
       submenu: [
         {
+          label: '편집 모드 켜기 / 끄기',
+          accelerator: 'CmdOrCtrl+Alt+E',
+          click: () => win && win.webContents.send('menu:toggle-edit'),
+        },
+        { type: 'separator' },
+        {
           label: '찾기…',
           accelerator: 'CmdOrCtrl+F',
           click: () => win && win.webContents.send('menu:find'),
@@ -225,6 +231,21 @@ ipcMain.handle('file:read', async (_e, filePath) => {
   try {
     return { content: fs.readFileSync(filePath, 'utf8') };
   } catch (err) {
+    return { error: String(err.message || err) };
+  }
+});
+
+// 편집 저장 — 렌더러가 만든 새 원문을 파일에 쓴다.
+// 우리가 쓴 변경은 감시자가 다시 잡아 재렌더를 일으키므로(되먹임), 그 경로를 억제 목록에 남긴다.
+const selfWrites = new Map(); // path -> 쓴 시각(ms)
+
+ipcMain.handle('file:write', async (_e, { path: filePath, content }) => {
+  try {
+    selfWrites.set(filePath, Date.now());
+    fs.writeFileSync(filePath, content, 'utf8');
+    return { ok: true };
+  } catch (err) {
+    selfWrites.delete(filePath);
     return { error: String(err.message || err) };
   }
 });
@@ -581,7 +602,12 @@ ipcMain.on('watch:set', (_e, paths) => {
   for (const p of want) {
     if (watchers.has(p)) continue;
     const w = chokidar.watch(p, { ignoreInitial: true, awaitWriteFinish: { stabilityThreshold: 150, pollInterval: 50 } });
-    w.on('change', () => win && win.webContents.send('file:changed', p));
+    w.on('change', () => {
+      // 앱이 방금 쓴 저장이면 렌더러가 이미 반영했다 — 다시 렌더링시키지 않는다
+      const at = selfWrites.get(p);
+      if (at && Date.now() - at < 1500) { selfWrites.delete(p); return; }
+      win && win.webContents.send('file:changed', p);
+    });
     watchers.set(p, w);
   }
 });

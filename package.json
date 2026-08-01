@@ -1,7 +1,7 @@
 {
   "name": "md-viewer",
   "productName": "MD Viewer",
-  "version": "0.10.1",
+  "version": "0.11.0",
   "description": "단독 실행 마크다운 뷰어 — GFM + KaTeX + Mermaid + Obsidian 확장",
   "author": "KIMHeeKwon <hkkim79@gmail.com>",
   "license": "MIT",
@@ -10,6 +10,7 @@
   "scripts": {
     "bundle": "esbuild src/renderer/renderer.js --bundle --outdir=renderer-dist --entry-names=renderer --minify --loader:.woff2=file --loader:.woff=file --loader:.ttf=file && node -e \"require('fs').copyFileSync(require.resolve('pdfjs-dist/build/pdf.worker.min.mjs'), 'renderer-dist/pdf.worker.min.mjs')\"",
     "build": "npm run bundle",
+    "test": "node --test test/edit-core.test.mjs",
     "start": "npm run bundle && electron .",
     "dist": "npm run bundle && electron-builder"
   },

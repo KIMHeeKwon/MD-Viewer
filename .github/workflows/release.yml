@@ -35,6 +35,10 @@ jobs:
       - name: Install
         run: npm ci
 
+      # 편집 저장 계산 검증 — 틀리면 사용자 문서가 깨지므로 패키징 전에 막는다 (DECISIONS D29)
+      - name: Test
+        run: npm test
+
       # 렌더러 번들 생성 — 이 단계가 없으면 renderer-dist가 패키지에서 누락되어
       # 설치본이 스타일·스크립트 없이 뼈대 HTML만 표시된다 (FAILURES.md)
       - name: Build renderer

@@ -388,7 +388,7 @@ body.resizing { cursor: col-resize; user-select: none; }
 }
 #st-path { overflow: hidden; text-overflow: ellipsis; }
 .st-right { display: flex; gap: 16px; align-items: center; }
-#btn-theme, #st-font {
+#btn-theme, #st-font, #st-edit, #st-revert {
   border: none;
   background: none;
   color: var(--status-fg);
@@ -402,6 +402,48 @@ body.resizing { cursor: col-resize; user-select: none; }
   opacity: .9;
 }
 #st-font:hover { opacity: 1; text-decoration: underline; }
+
+/* 편집 모드 — 상태 바에만 표시를 둔다 (본문에는 UI를 넣지 않는다: DESIGN 금지 3) */
+#st-edit, #st-revert {
+  font-family: inherit;
+  font-size: 11.5px;
+  opacity: .9;
+}
+#st-edit:hover, #st-revert:hover { opacity: 1; text-decoration: underline; }
+/* 상태 바 배경이 --accent라 강조색으로는 묻힌다 — 켜진 상태는 배경을 반전시켜 알린다 */
+#st-edit.on, #st-note {
+  background: var(--bg);
+  color: var(--fg);
+  border-radius: 3px;
+  padding: 1px 6px;
+  opacity: 1;
+}
+#st-revert { text-decoration: underline; }
+
+/* 편집 모드에서만, 더블클릭으로 고칠 수 있는 블록임을 아주 옅게 알린다 */
+body.edit-mode .doc-body > *:hover {
+  background: color-mix(in srgb, var(--accent) 7%, transparent);
+  border-radius: 4px;
+}
+
+.block-editor {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  margin: 0 0 16px;
+  padding: 10px 12px;
+  border: 1px solid var(--accent);
+  border-radius: 6px;
+  background: var(--soft);
+  color: var(--fg);
+  font-family: "JetBrains Mono", "SF Mono", Consolas, monospace;
+  font-size: .92em;
+  line-height: 1.6;
+  resize: none;
+  overflow: hidden;
+  outline: none;
+  white-space: pre-wrap;
+}
 
 /* PDF 열람 — PDF.js 렌더링, 앱 테마에 통합 */
 .pdf-scroll {
