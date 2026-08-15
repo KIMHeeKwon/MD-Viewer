@@ -111,6 +111,8 @@ const state = {
   theme: 'dark',
   editMode: false,     // 기본은 읽기 전용 — 켜야 편집이 열린다
   fileIndex: new Map(),// 소문자 파일명(확장자 제외) -> path (위키링크 해석용)
+  treeFiles: new Set(),// 현재 트리에 실제로 있는 파일 경로
+  loose: [],           // 트리 밖에서 연 문서 ("따로 연 문서" 섹션) — 연 순서 유지
 };
 
 // 그래프 패널을 닫는 훅 — graphView가 만들어진 뒤 실제 구현으로 교체된다
@@ -538,9 +540,41 @@ function renderTree() {
 }
 
 function markActiveInTree() {
-  for (const el of treeEl.querySelectorAll('.tree-item[data-path]')) {
+  for (const el of document.querySelectorAll('#tree .tree-item[data-path], #loose .tree-item[data-path]')) {
     el.classList.toggle('active', el.dataset.path === state.active);
   }
+}
+
+// "따로 연 문서" — 열린 폴더 트리 밖에서 연 문서만 모아 보여준다.
+// 트리를 흔들지 않으면서도 지금 읽는 문서가 사이드바에 자기 자리를 갖게 하는 것이 목적이다.
+// 탭이 닫혔거나 폴더를 열어 트리 안으로 들어온 문서는 목록에서 저절로 빠진다.
+function refreshLoose() {
+  state.loose = state.loose.filter(
+    (p) => state.tabs.some((t) => t.path === p) && !state.treeFiles.has(p),
+  );
+  $('#loose-wrap').hidden = state.loose.length === 0;
+  $('#loose-count').textContent = state.loose.length ? String(state.loose.length) : '';
+
+  const el = $('#loose');
+  el.textContent = '';
+  for (const p of state.loose) {
+    const item = document.createElement('div');
+    item.className = 'tree-item loose-item';
+    item.dataset.path = p;
+    item.title = p;
+    const name = document.createElement('span');
+    name.className = 'loose-name';
+    name.textContent = p.slice(p.lastIndexOf('/') + 1);
+    const close = document.createElement('button');
+    close.className = 'loose-close';
+    close.textContent = '×';
+    close.title = '닫기';
+    close.addEventListener('click', (e) => { e.stopPropagation(); closeTab(p); });
+    item.append(name, close);
+    item.addEventListener('click', () => openFile(p));
+    el.append(item);
+  }
+  markActiveInTree();
 }
 
 /* ---------- 탭 ---------- */
@@ -616,6 +650,7 @@ function closeTab(path) {
     const next = state.tabs[idx] || state.tabs[idx - 1];
     state.active = next ? next.path : null;
   }
+  refreshLoose();
   activateTab(state.active);
   syncWatch();
 }
@@ -1271,8 +1306,11 @@ function loadFolder(res) {
   state.tree = res.tree;
   state.fileIndex.clear();
   buildFileIndex(state.tree);
+  state.treeFiles.clear();
+  collectFiles(state.tree, state.treeFiles);
   $('#root-name').textContent = res.name;
   renderTree();
+  refreshLoose();      // 새 트리에 들어온 문서는 "따로 연 문서"에서 빠진다
   updateStatus();
 }
 
@@ -1292,16 +1330,13 @@ async function openFolder() {
 }
 
 // Finder/탐색기에서 더블클릭으로 열린 파일 — 폴더가 없으면 상위 폴더를 트리로 열고 탭 생성
+// 트리 밖 문서는 상위 폴더를 통째로 열지 않고 "따로 연 문서"에만 세운다.
+// (예전에는 폴더를 자동으로 열어, 받은 파일 하나 때문에 ~/Downloads 전체가 트리에 들어왔다)
 async function openExternalFile(p) {
   if (!p) return;
-  if (!state.root) {
-    const dir = p.slice(0, p.lastIndexOf('/'));
-    if (dir) {
-      const res = await window.api.openFolderPath(dir);
-      if (res && !res.error) loadFolder(res);
-    }
-  }
+  if (!state.treeFiles.has(p) && !state.loose.includes(p)) state.loose.push(p);
   await openFile(p);
+  refreshLoose();
 }
 
 /* ---------- 세션 저장 / 복원 ---------- */
@@ -1311,6 +1346,7 @@ function saveSession() {
     root: state.root,
     tabs: state.tabs.map((t) => t.path),
     active: state.active,
+    loose: state.loose,
   }));
 }
 
@@ -1324,16 +1360,19 @@ function collectFiles(nodes, set) {
 async function restoreSession() {
   let s;
   try { s = JSON.parse(localStorage.getItem('session') || 'null'); } catch { s = null; }
-  if (!s || !s.root) return;
-  const res = await window.api.openFolderPath(s.root);
-  if (!res || res.error) return; // 폴더가 사라졌으면 조용히 건너뜀
-  loadFolder(res);
-  const existing = new Set();
-  collectFiles(state.tree, existing);
+  if (!s) return;
+  if (s.root) {
+    const res = await window.api.openFolderPath(s.root);
+    if (res && !res.error) loadFolder(res); // 폴더가 사라졌으면 트리 없이 이어간다
+  }
+  const loose = new Set(s.loose || []);
   for (const p of s.tabs || []) {
-    if (existing.has(p)) await openFile(p); // 삭제된 파일은 복원하지 않음
+    // 트리 안의 파일이거나 "따로 연 문서"로 기록된 파일만 복원한다 (삭제된 파일은 조용히 건너뜀)
+    if (state.treeFiles.has(p)) await openFile(p);
+    else if (loose.has(p)) await openExternalFile(p);
   }
   if (s.active && state.tabs.some((t) => t.path === s.active)) activateTab(s.active);
+  refreshLoose();
 }
 
 window.api.onFileChanged(async (path) => {

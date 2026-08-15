@@ -28,6 +28,7 @@ A per-OS manual covering installation, usage, and shortcuts is also included:
 
 - **Rich syntax support** — GFM (tables, task lists, strikethrough, footnotes), KaTeX math, Mermaid diagrams, code syntax highlighting, Obsidian wikilinks & callouts
 - **Open a single file (⌘O)** — View one document quickly; select several and they all open as tabs
+- **Opened separately** — Documents outside the current folder tree (a downloaded file, say) collect in their own list above the tree. **The folder tree never shifts**, and the list disappears when empty
 - **Folder tree + tabs (⇧⌘O)** — Open a folder to see the document tree in the sidebar, and open documents in multiple tabs. Sidebar width is draggable and remembered
 - **Outline panel** — Heading list at the bottom of the sidebar; click to jump, with the current position tracked as you scroll
 - **Backlinks panel** — Lists documents that reference the current one via `[[wikilinks]]`; click to open them
