@@ -388,7 +388,21 @@ body.resizing { cursor: col-resize; user-select: none; }
   color: var(--fg);
 }
 .doc-body .callout p:last-child { margin-bottom: 0; }
-.callout-title { font-weight: 700; color: var(--accent); font-size: 0.833em; letter-spacing: .04em; margin-bottom: 4px; }
+.callout-title {
+  font-weight: 700;
+  color: var(--accent);
+  font-size: 0.833em;
+  letter-spacing: .04em;
+  margin-bottom: 4px;
+  cursor: pointer;
+  user-select: none;
+}
+.callout-title::before { content: "▾ "; display: inline-block; width: 1em; }
+.callout.collapsed .callout-title::before { content: "▸ "; }
+/* 접힌 콜아웃은 제목 줄만 남긴다 — 메모가 쌓여도 읽기 흐름을 끊지 않게 */
+.callout.collapsed > *:not(.callout-title) { display: none; }
+.callout.collapsed .callout-title { margin-bottom: 0; }
+.callout.collapsed { padding-top: 6px; padding-bottom: 6px; }
 .callout-warning, .callout-caution { border-left-color: #e0af68; }
 .callout-warning .callout-title, .callout-caution .callout-title { color: #e0af68; }
 .callout-important, .callout-danger, .callout-error { border-left-color: #f7768e; }

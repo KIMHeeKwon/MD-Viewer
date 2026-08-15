@@ -51,7 +51,9 @@ function calloutPlugin(md) {
       const m = inline.content.match(RE);
       if (!m) continue;
       const type = m[1].toLowerCase();
-      tokens[i].attrJoin('class', `callout callout-${type}`);
+      // Obsidian 표기 `[!note]-`는 접힌 채로 시작한다는 뜻이다 (`+`·생략은 펼친 상태).
+      // 접기 자체는 모든 콜아웃에서 제목 클릭으로 되므로, 이 표기는 "처음 상태"만 정한다.
+      tokens[i].attrJoin('class', `callout callout-${type}${m[2] === '-' ? ' collapsed' : ''}`);
       tokens[i].meta = { calloutType: type };
       inline.content = inline.content.replace(RE, '');
       if (inline.children && inline.children.length) {
@@ -343,6 +345,11 @@ async function renderInto(pane, source, dir) {
     try { await mermaid.run({ nodes: body.querySelectorAll('.mermaid') }); } catch { /* 문법 오류 시 원문 노출 */ }
   }
 
+  // 콜아웃 제목 클릭 → 접기/펼치기. 표기(`-`)가 없는 기존 콜아웃도 접을 수 있게 전부 대상으로 한다
+  for (const title of body.querySelectorAll('.callout-title')) {
+    title.addEventListener('click', () => title.parentElement.classList.toggle('collapsed'));
+  }
+
   // 위키링크 클릭 → 트리에서 같은 이름의 문서 열기
   for (const a of body.querySelectorAll('a.wikilink')) {
     a.addEventListener('click', () => {
@@ -539,7 +546,8 @@ async function exitSourceMode() {
 /* ---------- 메모 달기 — 블록 아래에 콜아웃을 끼워 넣는다 ---------- */
 
 // 메모를 콜아웃으로 넣으면 "AI가 쓴 것"과 "내가 덧붙인 것"이 화면에서 색으로 구분된다 (D25).
-const MEMO_BLOCK = '> [!note]\n> ';
+// `-`를 붙여 접힌 상태로 넣는다 — 메모가 쌓여도 읽기 흐름을 끊지 않게 (DECISIONS D44)
+const MEMO_BLOCK = '> [!note]-\n> ';
 
 // 삽입 전용 함수는 필요 없다 — 블록을 "본문 + 빈 줄 + 메모"로 교체하면 한 번의 쓰기로 끝난다
 async function insertMemoAfter(tab, start, end, text) {

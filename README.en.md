@@ -43,7 +43,8 @@ A per-OS manual covering installation, usage, and shortcuts is also included:
 - **PDF** — View PDF files (integrated into the app theme, with page navigation, **jump by page number**, zoom, and text selection & search) and export Markdown to PDF (⌘E, always output in light theme)
 - **HTML export (⌘⇧E)** — A **single self-contained HTML file** with styles, math fonts, and images embedded; opens identically in any browser, offline
 - **Edit mode (⌘⌥E)** — Read-only by default. Turn it on and **double-click any block** — paragraph, table, code fence — to edit its Markdown source in place; leaving the box saves and re-renders automatically. **Revert** in the status bar restores the document to how it was when opened
-- **Annotate (right-click or ⌘⇧M)** — Drops a `> [!note]` callout right below any block, so your own remarks stay **visually distinct** from the original text
+- **Annotate (right-click or ⌘⇧M)** — Drops a `> [!note]-` callout right below any block, so your own remarks stay **visually distinct** and **folded by default** — many memos never break the reading flow
+- **Foldable callouts** — Click a callout's title to fold or unfold it; the `> [!note]-` form starts folded (Obsidian-compatible)
 - **Source mode (⌘⌥S)** — Edit the whole document's Markdown source. Unlike inline editing this is **explicit save (⌘S)**, and leaving with unsaved changes prompts first
 - **File watching** — Automatically re-renders when a document is saved from an external editor (VS Code, Obsidian, etc.)
 - **Dark / light theme** (⌘⇧L)
