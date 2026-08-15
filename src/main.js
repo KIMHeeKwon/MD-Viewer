@@ -108,6 +108,12 @@ function buildMenu() {
           click: () => win && win.webContents.send('menu:open-folder'),
         },
         {
+          label: '저장',
+          accelerator: 'CmdOrCtrl+S',
+          click: () => win && win.webContents.send('menu:save'),
+        },
+        { type: 'separator' },
+        {
           label: 'PDF로 내보내기…',
           accelerator: 'CmdOrCtrl+E',
           click: () => win && win.webContents.send('menu:export-pdf'),
@@ -129,6 +135,17 @@ function buildMenu() {
           label: '편집 모드 켜기 / 끄기',
           accelerator: 'CmdOrCtrl+Alt+E',
           click: () => win && win.webContents.send('menu:toggle-edit'),
+        },
+        {
+          label: '소스 모드 켜기 / 끄기',
+          accelerator: 'CmdOrCtrl+Alt+S',
+          click: () => win && win.webContents.send('menu:toggle-source'),
+        },
+        {
+          // 가속기를 두지 않는다 — ⌘⇧M은 블록 편집창 안에서 직접 처리한다
+          // (메뉴 가속기가 키를 가로채면 편집창까지 전달되지 않는다)
+          label: '메모 달기 (편집창에서 ⌘⇧M)',
+          click: () => win && win.webContents.send('menu:insert-memo'),
         },
         { type: 'separator' },
         {
@@ -252,6 +269,20 @@ ipcMain.handle('file:write', async (_e, { path: filePath, content }) => {
     selfWrites.delete(filePath);
     return { error: String(err.message || err) };
   }
+});
+
+// 소스 모드를 벗어날 때의 확인 — 저장하지 않은 변경을 그 자리에서 확정시킨다 (DECISIONS D22.1).
+// 0 = 저장, 1 = 변경 버리기. 실수로 닫혔을 때 손실이 없도록 기본값은 저장이다.
+ipcMain.handle('dialog:unsaved', async (_e, name) => {
+  const { response } = await dialog.showMessageBox(win, {
+    type: 'warning',
+    buttons: ['저장', '변경 버리기'],
+    defaultId: 0,
+    cancelId: 0,
+    message: `"${name}"에 저장하지 않은 변경이 있습니다.`,
+    detail: '소스 모드에서 고친 내용을 저장할까요?',
+  });
+  return response;
 });
 
 // PDF 원본 바이트 — 렌더러에는 Uint8Array로 전달된다

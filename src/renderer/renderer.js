@@ -393,7 +393,7 @@ function setEditMode(on) {
   state.editMode = on;
   localStorage.setItem('editMode', on ? '1' : '0');
   document.body.classList.toggle('edit-mode', on);
-  if (!on) closeBlockEditor(true);
+  if (!on) { closeBlockEditor(true); exitSourceMode(); }
   syncEditUi();
 }
 
@@ -403,6 +403,10 @@ function syncEditUi() {
   btn.classList.toggle('on', state.editMode);
   const tab = activeTab();
   $('#st-revert').hidden = !tab || tab.isPdf || tab.source === tab.original;
+  const src = $('#st-source');
+  src.hidden = !state.editMode || !tab || tab.isPdf;
+  src.classList.toggle('on', !!sourceEdit);
+  $('#st-save').hidden = !sourceDirty();
 }
 
 function setEditNote(msg) {
@@ -436,6 +440,10 @@ function openBlockEditor(tab, el) {
   ta.addEventListener('input', () => autoGrow(ta));
   ta.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') { e.preventDefault(); closeBlockEditor(false); }
+    if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key.toLowerCase() === 'm') {
+      e.preventDefault();
+      insertMemo();
+    }
   });
   ta.addEventListener('blur', () => closeBlockEditor(true));
 }
@@ -466,6 +474,93 @@ async function closeBlockEditor(save) {
   setEditNote('');
   be.tab.source = next;
   await rerenderTab(be.tab);
+}
+
+/* ---------- 소스 모드 — 문서 전체 원문을 ⌘S로 명시 저장 ---------- */
+
+// 문서 전체를 한 번에 덮어쓰는 경로라 인라인 편집(자동 저장)과 실패 파장이 다르다.
+// 그래서 저장을 명시적으로 두되, 미저장 상태가 이 화면 밖으로 새지 않게 가둔다 (DECISIONS D22.1).
+let sourceEdit = null;   // { tab, textarea }
+
+function sourceDirty() {
+  return !!sourceEdit && sourceEdit.textarea.value !== sourceEdit.tab.source;
+}
+
+async function toggleSourceMode() {
+  if (sourceEdit) { await exitSourceMode(); return; }
+  if (!state.editMode) { setEditNote('편집 모드를 먼저 켜세요 (⌘⌥E)'); return; }
+  const tab = activeTab();
+  if (!tab || tab.isPdf) return;
+  await closeBlockEditor(true);
+
+  const ta = document.createElement('textarea');
+  ta.className = 'source-editor';
+  ta.spellcheck = false;
+  ta.value = tab.source;
+  tab.pane.querySelector('.doc-body').hidden = true;
+  tab.pane.append(ta);
+  sourceEdit = { tab, textarea: ta };
+  ta.addEventListener('input', syncEditUi);
+  ta.focus();
+  setEditNote('');
+  syncEditUi();
+}
+
+async function saveSource() {
+  if (!sourceEdit) return true;
+  const { tab, textarea } = sourceEdit;
+  const next = textarea.value;
+  if (next === tab.source) return true;
+  const res = await window.api.writeFile(tab.path, applyEol(next, tab.eol));
+  if (res && res.error) { setEditNote(`저장 실패: ${res.error}`); return false; }
+  setEditNote('');
+  tab.source = next;
+  syncEditUi();
+  return true;
+}
+
+// 소스 모드를 벗어나는 모든 경로가 여기로 모인다 — 토글 해제·탭 전환·탭 닫기·편집 모드 끄기.
+// 저장에 실패하면 false를 돌려주고 화면을 그대로 둔다 (사용자가 쓴 글을 잃지 않게).
+async function exitSourceMode() {
+  if (!sourceEdit) return true;
+  const { tab, textarea } = sourceEdit;
+  if (sourceDirty()) {
+    const answer = await window.api.confirmUnsaved(tab.name);
+    if (answer === 0 && !(await saveSource())) return false;
+  }
+  textarea.remove();
+  const body = tab.pane.querySelector('.doc-body');
+  if (body) body.hidden = false;
+  sourceEdit = null;
+  await rerenderTab(tab);
+  return true;
+}
+
+/* ---------- 메모 달기 — 블록 아래에 콜아웃을 끼워 넣는다 ---------- */
+
+// 메모를 콜아웃으로 넣으면 "AI가 쓴 것"과 "내가 덧붙인 것"이 화면에서 색으로 구분된다 (D25).
+const MEMO_BLOCK = '> [!note]\n> ';
+
+async function insertMemo() {
+  if (!blockEdit || blockEdit.closing) {
+    setEditNote('메모를 달 블록을 먼저 더블클릭하세요');
+    return;
+  }
+  const be = blockEdit;
+  const text = be.textarea.value;
+  // 삽입 전용 함수는 필요 없다 — 블록을 "본문 + 빈 줄 + 메모"로 교체하면 한 번의 쓰기로 끝난다
+  const next = replaceBlock(be.tab.source, be.start, be.end, `${text}\n\n${MEMO_BLOCK}`);
+  const res = await window.api.writeFile(be.tab.path, applyEol(next, be.tab.eol));
+  if (res && res.error) { setEditNote(`저장 실패: ${res.error}`); return; }
+
+  const memoStart = be.start + text.split('\n').length + 1;
+  blockEdit = null;
+  setEditNote('');
+  be.tab.source = next;
+  await rerenderTab(be.tab);
+  // 새로 생긴 메모 블록에 바로 커서를 놓아, 열자마자 내용을 쓸 수 있게 한다
+  const el = be.tab.pane.querySelector(`[data-src-start="${memoStart}"]`);
+  if (el) openBlockEditor(be.tab, el);
 }
 
 async function revertTab() {
@@ -615,6 +710,11 @@ tabbarEl.addEventListener('wheel', (e) => {
 }, { passive: false });
 
 function activateTab(path) {
+  // 소스 모드의 미저장 변경은 탭을 떠나기 전에 확정한다 (확인이 끝난 뒤에야 전환한다)
+  if (sourceEdit && sourceEdit.tab.path !== path) {
+    exitSourceMode().then((ok) => { if (ok) activateTab(path); });
+    return;
+  }
   // 편집 중인 블록은 탭을 떠나기 전에 확정한다 — 미저장 상태가 탭 밖으로 새지 않게
   closeBlockEditor(true);
   state.active = path;
@@ -635,6 +735,11 @@ function activateTab(path) {
 }
 
 function closeTab(path) {
+  // 소스 모드로 열려 있는 탭이면 미저장 변경을 먼저 확정한다
+  if (sourceEdit && sourceEdit.tab.path === path) {
+    exitSourceMode().then((ok) => { if (ok) closeTab(path); });
+    return;
+  }
   const idx = state.tabs.findIndex((t) => t.path === path);
   if (idx < 0) return;
   // PDF.js 6에는 PDFDocumentProxy.destroy()가 없다 — loadingTask로 워커까지 해제한다.
@@ -1378,6 +1483,11 @@ async function restoreSession() {
 window.api.onFileChanged(async (path) => {
   const tab = state.tabs.find((t) => t.path === path);
   if (!tab) return;
+  // 소스 모드로 편집 중이면 화면을 갈아끼우지 않는다 — 쓰던 내용이 사라지기 때문이다
+  if (sourceEdit && sourceEdit.tab === tab) {
+    setEditNote('이 문서가 외부에서 바뀌었습니다 — 저장하면 그 변경을 덮어씁니다');
+    return;
+  }
   const res = await window.api.readFile(path);
   if (res.error) return;
   // 외부에서 바뀐 문서다 (앱이 쓴 저장은 main에서 걸러진다).
@@ -1435,7 +1545,12 @@ $('#es-folder').addEventListener('click', openFolder);
 $('#btn-theme').addEventListener('click', toggleTheme);
 $('#st-edit').addEventListener('click', () => setEditMode(!state.editMode));
 $('#st-revert').addEventListener('click', revertTab);
+$('#st-source').addEventListener('click', toggleSourceMode);
+$('#st-save').addEventListener('click', saveSource);
 window.api.onMenu('menu:toggle-edit', () => setEditMode(!state.editMode));
+window.api.onMenu('menu:toggle-source', toggleSourceMode);
+window.api.onMenu('menu:save', saveSource);
+window.api.onMenu('menu:insert-memo', insertMemo);
 setEditMode(localStorage.getItem('editMode') === '1');
 window.api.onMenu('menu:open-folder', openFolder);
 window.api.onMenu('menu:open-files', openFilesDialog);

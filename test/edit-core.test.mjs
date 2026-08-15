@@ -127,6 +127,51 @@ test('실제 토큰 범위로 잘라낸 원문을 그대로 되돌려 쓰면 문
   }
 });
 
+/* ---------- 메모 콜아웃 삽입 (v0.13.0) ---------- */
+
+// 렌더러의 insertMemo가 쓰는 계산을 그대로 재현한다:
+//   블록을 "본문 + 빈 줄 + 메모"로 교체하고, 메모의 시작 줄을 start + 본문줄수 + 1로 잡는다.
+const MEMO = '> [!note]\n> ';
+function insertMemoAt(source, start, end, text) {
+  return {
+    next: replaceBlock(source, start, end, `${text}\n\n${MEMO}`),
+    memoStart: start + text.split('\n').length + 1,
+  };
+}
+
+test('메모는 삽입 전용 함수 없이 replaceBlock만으로 끼워 넣어진다', () => {
+  const md = new MarkdownIt();
+  const [s, e] = trimBlankTail(DOC, 2, 3);                 // 첫 문단
+  const { next, memoStart } = insertMemoAt(DOC, s, e, sliceBlock(DOC, s, e));
+
+  // 계산한 줄 번호에 실제로 콜아웃이 있는가 — 파서에게 되묻는다
+  const quote = md.parse(next, {}).find((t) => t.type === 'blockquote_open');
+  assert.equal(quote.map[0], memoStart, '메모 블록의 시작 줄이 계산과 일치해야 한다');
+  assert.equal(sliceBlock(next, memoStart, memoStart + 1), '> [!note]');
+
+  // 원문은 하나도 잃지 않는다
+  assert.match(next, /^# 제목\n\n첫 문단이다\.\n\n> \[!note\]/);
+  assert.match(next, /- 항목 1\n- 항목 2/);
+  assert.match(next, /마지막 문단$/);
+});
+
+test('여러 줄 블록에 메모를 달아도 줄 번호가 맞는다', () => {
+  const md = new MarkdownIt();
+  const [s, e] = trimBlankTail(DOC, 4, 7);                 // 리스트(2줄)
+  const { next, memoStart } = insertMemoAt(DOC, s, e, sliceBlock(DOC, s, e));
+
+  const quote = md.parse(next, {}).find((t) => t.type === 'blockquote_open');
+  assert.equal(quote.map[0], memoStart);
+  assert.match(next, /- 항목 1\n- 항목 2\n\n> \[!note\]\n> \n\n마지막 문단/);
+});
+
+test('문서 마지막 블록에 메모를 달 수 있다', () => {
+  const [s, e] = trimBlankTail(DOC, 7, 8);
+  const { next, memoStart } = insertMemoAt(DOC, s, e, sliceBlock(DOC, s, e));
+  assert.equal(sliceBlock(next, memoStart, memoStart + 1), '> [!note]');
+  assert.match(next, /마지막 문단\n\n> \[!note\]\n> $/);
+});
+
 test('한 블록만 고치면 나머지 블록은 글자 하나도 바뀌지 않는다', () => {
   const md = new MarkdownIt();
   const blocks = md.parse(DOC, {})

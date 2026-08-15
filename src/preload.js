@@ -7,6 +7,7 @@ contextBridge.exposeInMainWorld('api', {
   readFile: (p) => ipcRenderer.invoke('file:read', p),
   readFileBinary: (p) => ipcRenderer.invoke('file:readBinary', p),
   writeFile: (p, content) => ipcRenderer.invoke('file:write', { path: p, content }),
+  confirmUnsaved: (name) => ipcRenderer.invoke('dialog:unsaved', name),
   setWatched: (paths) => ipcRenderer.send('watch:set', paths),
   exportPdf: (suggestedName) => ipcRenderer.invoke('pdf:export', suggestedName),
   exportHtml: (payload) => ipcRenderer.invoke('html:export', payload),
@@ -26,6 +27,7 @@ contextBridge.exposeInMainWorld('api', {
       'menu:open-folder', 'menu:open-files', 'menu:toggle-theme', 'menu:export-pdf',
       'menu:find', 'menu:search-project', 'menu:read-width', 'menu:export-html',
       'menu:font-size', 'menu:graph', 'menu:check-update', 'menu:toggle-edit',
+      'menu:toggle-source', 'menu:save', 'menu:insert-memo',
     ];
     if (allowed.includes(channel)) {
       ipcRenderer.on(channel, (_e, ...args) => cb(...args));
