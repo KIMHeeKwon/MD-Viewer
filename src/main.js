@@ -638,6 +638,17 @@ ipcMain.handle('pdf:export', async (_e, suggestedName) => {
   }
 });
 
+// 본문 블록 우클릭 메뉴 — OS 기본 메뉴를 쓰고, 어느 블록인지는 렌더러가 기억한다.
+// 참조를 모듈 수준에 붙잡아 둔다: 지역 변수로 두면 팝업이 떠 있는 동안 GC 대상이 된다.
+let blockMenu = null;
+ipcMain.on('menu:block-context', () => {
+  if (!win) return;
+  blockMenu = Menu.buildFromTemplate([
+    { label: '메모 달기', click: () => win && win.webContents.send('menu:insert-memo-here') },
+  ]);
+  blockMenu.popup({ window: win });
+});
+
 // 렌더러가 열린 탭 전체 경로를 보내면 감시 목록을 그에 맞춰 동기화한다
 ipcMain.on('watch:set', (_e, paths) => {
   const want = new Set(paths);

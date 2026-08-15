@@ -541,6 +541,22 @@ async function exitSourceMode() {
 // 메모를 콜아웃으로 넣으면 "AI가 쓴 것"과 "내가 덧붙인 것"이 화면에서 색으로 구분된다 (D25).
 const MEMO_BLOCK = '> [!note]\n> ';
 
+// 삽입 전용 함수는 필요 없다 — 블록을 "본문 + 빈 줄 + 메모"로 교체하면 한 번의 쓰기로 끝난다
+async function insertMemoAfter(tab, start, end, text) {
+  const next = replaceBlock(tab.source, start, end, `${text}\n\n${MEMO_BLOCK}`);
+  const res = await window.api.writeFile(tab.path, applyEol(next, tab.eol));
+  if (res && res.error) { setEditNote(`저장 실패: ${res.error}`); return; }
+
+  const memoStart = start + text.split('\n').length + 1;
+  setEditNote('');
+  tab.source = next;
+  await rerenderTab(tab);
+  // 새로 생긴 메모 블록에 바로 커서를 놓아, 열자마자 내용을 쓸 수 있게 한다
+  const el = tab.pane.querySelector(`[data-src-start="${memoStart}"]`);
+  if (el) openBlockEditor(tab, el);
+}
+
+// 편집창 안에서 ⌘⇧M — 고치던 내용을 함께 저장하고 그 아래에 메모를 단다
 async function insertMemo() {
   if (!blockEdit || blockEdit.closing) {
     setEditNote('메모를 달 블록을 먼저 더블클릭하세요');
@@ -548,19 +564,17 @@ async function insertMemo() {
   }
   const be = blockEdit;
   const text = be.textarea.value;
-  // 삽입 전용 함수는 필요 없다 — 블록을 "본문 + 빈 줄 + 메모"로 교체하면 한 번의 쓰기로 끝난다
-  const next = replaceBlock(be.tab.source, be.start, be.end, `${text}\n\n${MEMO_BLOCK}`);
-  const res = await window.api.writeFile(be.tab.path, applyEol(next, be.tab.eol));
-  if (res && res.error) { setEditNote(`저장 실패: ${res.error}`); return; }
-
-  const memoStart = be.start + text.split('\n').length + 1;
   blockEdit = null;
-  setEditNote('');
-  be.tab.source = next;
-  await rerenderTab(be.tab);
-  // 새로 생긴 메모 블록에 바로 커서를 놓아, 열자마자 내용을 쓸 수 있게 한다
-  const el = be.tab.pane.querySelector(`[data-src-start="${memoStart}"]`);
-  if (el) openBlockEditor(be.tab, el);
+  await insertMemoAfter(be.tab, be.start, be.end, text);
+}
+
+// 우클릭 메뉴에서 — 편집창을 열지 않고 그 블록 원문을 그대로 둔 채 아래에만 메모를 단다
+async function insertMemoAtElement(tab, el) {
+  const rawStart = Number(el.dataset.srcStart);
+  const rawEnd = Number(el.dataset.srcEnd);
+  if (!Number.isFinite(rawStart) || !Number.isFinite(rawEnd)) return;
+  const [start, end] = trimBlankTail(tab.source, rawStart, rawEnd);
+  await insertMemoAfter(tab, start, end, sliceBlock(tab.source, start, end));
 }
 
 async function revertTab() {
@@ -572,6 +586,28 @@ async function revertTab() {
   tab.source = tab.original;
   await rerenderTab(tab);
 }
+
+// 우클릭 메뉴 — 편집 모드에서 블록을 우클릭하면 "메모 달기"가 뜬다.
+// 상시 표시되는 UI가 아니라 부를 때만 나타나므로 본문을 어지럽히지 않는다 (DESIGN 금지 3).
+let memoTarget = null;   // { tab, el } — 메뉴를 띄운 블록
+
+docsEl.addEventListener('contextmenu', (e) => {
+  if (!state.editMode || blockEdit) return;
+  const tab = activeTab();
+  if (!tab || tab.isPdf) return;
+  const el = e.target.closest('[data-src-start]');
+  if (!el || !tab.pane.contains(el)) return;
+  e.preventDefault();
+  memoTarget = { tab, el };
+  window.api.popupBlockMenu();
+});
+
+window.api.onMenu('menu:insert-memo-here', () => {
+  if (!memoTarget) return;
+  const { tab, el } = memoTarget;
+  memoTarget = null;
+  insertMemoAtElement(tab, el);
+});
 
 // 편집 진입은 더블클릭 하나뿐이다 — 편집 모드가 꺼져 있으면 지금처럼 단어 선택으로 남는다.
 docsEl.addEventListener('dblclick', (e) => {
