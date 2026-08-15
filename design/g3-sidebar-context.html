@@ -1,0 +1,342 @@
+<meta charset="utf-8">
+<title>MD Viewer — G3 사이드바 맥락 4안</title>
+<style>
+  :root {
+    --pg-bg: #f4f5f7; --pg-fg: #23262b; --pg-muted: #6b7280;
+    --pg-line: #d8dbe0; --pg-accent: #3b5bdb; --pg-card: #ffffff;
+    --pg-warn: #b45309; --pg-good: #15803d;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --pg-bg:#17181c; --pg-fg:#e3e5e8; --pg-muted:#9aa1ab; --pg-line:#33363d;
+            --pg-accent:#748ffc; --pg-card:#1f2126; --pg-warn:#e0a24a; --pg-good:#6cc48a; }
+  }
+  /* 앱 실제 토큰 (DESIGN.md — Tokyo Night) */
+  .app {
+    --bg:#1a1b26; --fg:#c0caf5; --dim:#565f89; --side:#16161e; --line:#101014;
+    --accent:#7aa2f7; --sel:#292e42; --soft:#24283b; --status-fg:#16161e;
+  }
+  * { box-sizing: border-box; }
+  body {
+    background: var(--pg-bg); color: var(--pg-fg); margin: 0; padding: 40px 20px 90px;
+    font-family: "Apple SD Gothic Neo", "Pretendard", -apple-system, "Segoe UI", sans-serif;
+    line-height: 1.65;
+  }
+  .wrap { max-width: 1180px; margin: 0 auto; }
+  .eyebrow { font-size: 12px; letter-spacing: .14em; color: var(--pg-accent); font-weight: 700; }
+  h1 { font-size: 26px; margin: 6px 0 10px; }
+  .lede { color: var(--pg-muted); max-width: 760px; margin: 0 0 26px; }
+
+  .scenario {
+    background: var(--pg-card); border: 1px solid var(--pg-line); border-radius: 12px;
+    padding: 16px 20px; margin-bottom: 28px;
+  }
+  .scenario b { display: block; margin-bottom: 4px; }
+  .steps { margin: 8px 0 0; padding-left: 20px; color: var(--pg-muted); font-size: 14px; }
+  .steps li { margin: 3px 0; }
+
+  .switcher { display: flex; gap: 8px; align-items: center; margin: 22px 0 10px; flex-wrap: wrap; }
+  .switcher span { font-size: 13px; color: var(--pg-muted); margin-right: 4px; }
+  .switcher button {
+    font: inherit; font-size: 13px; cursor: pointer; padding: 6px 14px;
+    border-radius: 999px; border: 1px solid var(--pg-line);
+    background: var(--pg-card); color: var(--pg-fg);
+  }
+  .switcher button.on { background: var(--pg-accent); border-color: var(--pg-accent); color: #fff; font-weight: 600; }
+
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 16px; align-items: start; }
+
+  .card {
+    background: var(--pg-card); border: 1px solid var(--pg-line);
+    border-radius: 12px; overflow: hidden; display: flex; flex-direction: column;
+  }
+  .card.baseline { border-style: dashed; }
+  .card.pick { border-color: var(--pg-accent); border-width: 2px; }
+  .card-head { padding: 12px 14px 10px; border-bottom: 1px solid var(--pg-line); }
+  .card-head .tag { font-size: 11px; letter-spacing: .1em; color: var(--pg-muted); font-weight: 700; }
+  .card-head .tag.now { color: var(--pg-warn); }
+  .card-head .tag.rec { color: var(--pg-accent); }
+  .card-head h3 { margin: 3px 0 0; font-size: 15px; }
+  .card-body { padding: 14px; }
+  .notes { padding: 0 14px 14px; font-size: 12.5px; }
+  .notes p { margin: 8px 0 0; }
+  .notes .plus::before { content: "＋ "; color: var(--pg-good); font-weight: 700; }
+  .notes .minus::before { content: "－ "; color: var(--pg-warn); font-weight: 700; }
+
+  /* ---- 앱 사이드바 목업 ---- */
+  .app {
+    background: var(--bg); border-radius: 8px; overflow: hidden;
+    font-size: 11.5px; line-height: 1.5; color: var(--fg);
+    display: flex; flex-direction: column; min-height: 268px;
+    border: 1px solid var(--line);
+  }
+  .app .side { background: var(--side); flex: 1; padding-bottom: 6px; }
+  .app .head {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 7px 9px; border-bottom: 1px solid var(--line); background: var(--bg);
+  }
+  .app .head .root { font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .app .head .btn { color: var(--dim); font-size: 10px; }
+  .app .sect {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 6px 9px 3px; color: var(--dim);
+    font-size: 9.5px; letter-spacing: .09em; text-transform: uppercase; font-weight: 700;
+  }
+  .app .sect .cnt {
+    background: var(--soft); color: var(--fg); border-radius: 999px;
+    padding: 0 5px; font-size: 9px; letter-spacing: 0;
+  }
+  .app .row { padding: 3px 9px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .app .row.dir { color: var(--fg); }
+  .app .row.f { color: var(--dim); padding-left: 20px; }
+  .app .row.f.top { padding-left: 14px; }
+  .app .row.active { background: var(--sel); color: var(--fg); border-left: 2px solid var(--accent); padding-left: 18px; }
+  .app .row.f.top.active { padding-left: 12px; }
+  .app .row .x { float: right; color: var(--dim); }
+  .app .rule { height: 1px; background: var(--line); margin: 6px 0; }
+  .app .empty { color: var(--dim); padding: 22px 12px; text-align: center; font-style: italic; }
+  .app .badge {
+    display: inline-block; background: var(--accent); color: var(--side);
+    border-radius: 3px; padding: 0 4px; font-size: 9px; font-weight: 700; margin-left: 4px;
+  }
+  .app .hint {
+    margin: 6px 9px 0; padding: 6px 8px; border-radius: 5px;
+    background: var(--soft); color: var(--dim); font-size: 10px; line-height: 1.45;
+  }
+  .app .hint a { color: var(--accent); text-decoration: none; }
+  .app .status {
+    background: var(--accent); color: var(--status-fg);
+    padding: 3px 9px; font-size: 9.5px;
+    display: flex; justify-content: space-between; gap: 6px;
+  }
+  .app .status .chip { background: var(--bg); color: var(--fg); border-radius: 3px; padding: 0 4px; }
+  .app .tabs {
+    display: flex; gap: 3px; padding: 5px 6px 0; background: var(--bg);
+    border-bottom: 1px solid var(--line); font-size: 9.5px;
+  }
+  .app .tabs .t {
+    padding: 3px 7px; border-radius: 4px 4px 0 0; color: var(--dim);
+    background: var(--side); white-space: nowrap; overflow: hidden;
+    text-overflow: ellipsis; max-width: 84px;
+  }
+  .app .tabs .t.on { background: var(--sel); color: var(--fg); }
+  .flash { animation: flash .5s ease; }
+  @keyframes flash { from { background: rgba(122,162,247,.22); } to { background: transparent; } }
+
+  .verdict {
+    margin-top: 34px; background: var(--pg-card); border: 1px solid var(--pg-line);
+    border-left: 4px solid var(--pg-accent); border-radius: 0 12px 12px 0; padding: 18px 22px;
+  }
+  .verdict h2 { margin: 0 0 8px; font-size: 17px; }
+  .verdict ul { margin: 10px 0 0; padding-left: 20px; }
+  .verdict li { margin: 5px 0; }
+  code {
+    background: var(--pg-bg); border: 1px solid var(--pg-line); border-radius: 4px;
+    padding: 0 4px; font-family: "SF Mono", Consolas, monospace; font-size: .87em;
+  }
+  footer { margin-top: 40px; color: var(--pg-muted); font-size: 13px; }
+</style>
+
+<div class="wrap">
+  <div class="eyebrow">G3 · BRAINSTORM</div>
+  <h1>사이드바 맥락 — 4가지 방향</h1>
+  <p class="lede">
+    “폴더로 열 때가 있고 그냥 받은 파일을 열 때가 있는데, 그때마다 예전 폴더가 같이 보여서
+    혼동스럽다”는 문제에 대한 서로 다른 네 갈래. 아래 두 상황을 번갈아 눌러 가며
+    <strong>같은 화면이 어떻게 달라지는지</strong> 비교하세요.
+  </p>
+
+  <div class="scenario">
+    <b>재현 상황</b>
+    <ol class="steps">
+      <li>어제 <code>내 볼트</code> 폴더를 열어 문서를 읽었다 → 앱을 껐다 켜면 그대로 복원된다</li>
+      <li>오늘 메일로 받은 <code>~/Downloads/받은자료.md</code> 를 <code>⌘O</code> 로 열었다</li>
+      <li>사이드바에는 여전히 <code>내 볼트</code> 트리가 있고, <strong>지금 읽는 문서는 거기 없다</strong></li>
+    </ol>
+  </div>
+
+  <div class="switcher">
+    <span>상황</span>
+    <button id="s1" class="on" onclick="setScene('vault')">① 볼트만 보는 중</button>
+    <button id="s2" onclick="setScene('mixed')">② 받은 파일을 연 직후</button>
+  </div>
+
+  <div class="grid" id="grid"></div>
+
+  <div class="verdict">
+    <h2>정리 — 무엇을 보고 고르면 되는가</h2>
+    <p>
+      네 방향은 <strong>“두 맥락이 부딪힐 때 무엇을 희생하는가”</strong>가 전부 다릅니다.
+    </p>
+    <ul>
+      <li><strong>A</strong>는 트리를 희생합니다 — 항상 옳지만 <em>계속 바뀝니다.</em></li>
+      <li><strong>B</strong>는 화면을 희생합니다 — 정확하지만 <code>~/Downloads</code> 수백 개가 들어옵니다.</li>
+      <li><strong>C</strong>는 볼트를 희생합니다 — 가장 깨끗하지만 되돌아오려면 다시 열어야 합니다.</li>
+      <li><strong>D</strong>는 아무것도 희생하지 않는 대신 <em>아무것도 고치지 않습니다</em> — 설명만 붙습니다.</li>
+      <li><strong>E(추천)</strong>는 <strong>파일 하나에게만 자리를 내줍니다.</strong> 폴더 트리는 흔들리지 않고,
+          받은 파일은 자기 자리를 갖고, 섹션이 비면 사라져 <em>볼트만 쓸 때는 지금과 완전히 같은 화면</em>이 됩니다.</li>
+    </ul>
+    <p style="margin-top:12px">
+      덤으로 E는 <strong>“받은 파일 탭이 앱을 껐다 켜면 사라지는”</strong> 기존 버그도 함께 해결합니다 —
+      복원할 목록이 화면에 이미 존재하기 때문입니다.
+    </p>
+  </div>
+
+  <footer>
+    이 목업은 앱의 실제 색 토큰(<code>DESIGN.md</code> · Tokyo Night)을 그대로 씁니다.
+    비율·간격은 개념 전달용이며 실제 구현과 다를 수 있습니다.
+  </footer>
+</div>
+
+<script>
+const TREE = `
+  <div class="row dir">▾ 프로젝트</div>
+  <div class="row f">설계.md</div>
+  <div class="row f">회의록.md</div>
+  <div class="row dir">▾ 조사</div>
+  <div class="row f">STT-파이프라인.md</div>
+  <div class="row f">지식그래프.md</div>`;
+
+const TREE_ACTIVE = `
+  <div class="row dir">▾ 프로젝트</div>
+  <div class="row f active">설계.md</div>
+  <div class="row f">회의록.md</div>
+  <div class="row dir">▾ 조사</div>
+  <div class="row f">STT-파이프라인.md</div>
+  <div class="row f">지식그래프.md</div>`;
+
+const DOWNLOADS = `
+  <div class="row f top">2026-보고서.pdf</div>
+  <div class="row f top active">받은자료.md</div>
+  <div class="row f top">설치안내.md</div>
+  <div class="row f top">영수증_01.pdf</div>
+  <div class="row f top">…외 312개</div>`;
+
+function tabs(mixed) {
+  return mixed
+    ? `<div class="tabs"><div class="t">설계.md</div><div class="t on">받은자료.md</div></div>`
+    : `<div class="tabs"><div class="t on">설계.md</div></div>`;
+}
+
+const CARDS = [
+  {
+    tag: '현재', tagClass: 'now', cls: 'baseline', title: '지금 동작',
+    render: (m) => `
+      ${tabs(m)}
+      <div class="side">
+        <div class="head"><span class="root">📁 내 볼트</span><span class="btn">◎ 폴더 열기</span></div>
+        ${m ? TREE : TREE_ACTIVE}
+      </div>
+      <div class="status"><span>${m ? '~/Downloads/받은자료.md' : '내 볼트/프로젝트/설계.md'}</span><span>읽기</span></div>`,
+    notes: [
+      ['minus', '읽는 문서가 트리에 없고, <b>하이라이트되는 항목도 없다</b>'],
+      ['minus', '화면 어디에도 “이 문서는 볼트 밖”이라는 신호가 없다'],
+      ['minus', '앱을 껐다 켜면 이 탭이 조용히 사라진다'],
+    ],
+  },
+  {
+    tag: '방향 A', tagClass: '', cls: '', title: '트리가 탭을 따라간다',
+    render: (m) => `
+      ${tabs(m)}
+      <div class="side">
+        <div class="head"><span class="root">${m ? '📁 Downloads' : '📁 내 볼트'}</span><span class="btn">◎ 폴더 열기</span></div>
+        <div class="${m ? 'flash' : ''}">${m ? DOWNLOADS : TREE_ACTIVE}</div>
+      </div>
+      <div class="status"><span>${m ? '~/Downloads/받은자료.md' : '내 볼트/프로젝트/설계.md'}</span><span>읽기</span></div>`,
+    notes: [
+      ['plus', '트리와 본문이 <b>항상 일치</b>한다 — 혼동의 여지가 없다'],
+      ['minus', '볼트 트리가 통째로 교체된다. 탭을 오갈 때마다 <b>트리가 요동친다</b>'],
+      ['minus', '읽던 볼트의 탐색 맥락(펼친 폴더 등)을 잃는다'],
+    ],
+  },
+  {
+    tag: '방향 B', tagClass: '', cls: '', title: '루트를 여러 개 (워크스페이스)',
+    render: (m) => `
+      ${tabs(m)}
+      <div class="side">
+        <div class="head"><span class="root">작업 공간</span><span class="btn">◎ 폴더 열기</span></div>
+        <div class="sect">📁 내 볼트</div>
+        ${m ? TREE : TREE_ACTIVE}
+        ${m ? `<div class="rule"></div><div class="sect flash">📁 Downloads<span class="cnt">316</span></div>${DOWNLOADS}` : ''}
+      </div>
+      <div class="status"><span>${m ? '~/Downloads/받은자료.md' : '내 볼트/프로젝트/설계.md'}</span><span>읽기</span></div>`,
+    notes: [
+      ['plus', '두 맥락이 <b>공존</b>한다. 볼트 트리를 잃지 않는다'],
+      ['minus', '파일 하나 때문에 <b>Downloads 316개가 통째로</b> 들어온다'],
+      ['minus', '루트가 쌓이면 정리(닫기) UI가 또 필요해진다'],
+    ],
+  },
+  {
+    tag: '방향 C', tagClass: '', cls: '', title: '단일 문서 모드',
+    render: (m) => `
+      ${tabs(m)}
+      <div class="side">
+        <div class="head"><span class="root">${m ? '단일 문서' : '📁 내 볼트'}</span><span class="btn">◎ 폴더 열기</span></div>
+        ${m
+          ? `<div class="empty flash">폴더를 열지 않았습니다<br><br>받은자료.md 한 편만<br>보고 있습니다</div>`
+          : TREE_ACTIVE}
+      </div>
+      <div class="status"><span>${m ? '~/Downloads/받은자료.md' : '내 볼트/프로젝트/설계.md'}</span><span>읽기</span></div>`,
+    notes: [
+      ['plus', '혼동이 <b>원천적으로 불가능</b>하다 — 트리가 아예 없다'],
+      ['minus', '볼트 트리가 사라진다. 돌아가려면 <b>다시 열어야 한다</b>'],
+      ['minus', '읽던 볼트 문서와 받은 문서를 나란히 오갈 수 없다'],
+    ],
+  },
+  {
+    tag: '방향 D', tagClass: '', cls: '', title: '표시만 강화 (최소 개입)',
+    render: (m) => `
+      ${tabs(m)}
+      <div class="side">
+        <div class="head"><span class="root">📁 내 볼트</span><span class="btn">◎ 폴더 열기</span></div>
+        ${m ? TREE : TREE_ACTIVE}
+        ${m ? `<div class="hint flash">지금 보는 <b>받은자료.md</b> 는 이 폴더 밖에 있습니다.<br><a>이 파일의 폴더 열기 →</a></div>` : ''}
+      </div>
+      <div class="status"><span>${m ? '~/Downloads/받은자료.md' : '내 볼트/프로젝트/설계.md'}</span><span>${m ? '<span class="chip">폴더 밖</span> 읽기' : '읽기'}</span></div>`,
+    notes: [
+      ['plus', '기존 동작을 하나도 안 바꾼다. 구현이 가장 작다'],
+      ['minus', '혼동의 <b>원인은 그대로</b>이고 설명만 덧붙는다'],
+      ['minus', '탭이 사라지는 문제는 여전히 안 풀린다'],
+    ],
+  },
+  {
+    tag: '방향 E · 추천', tagClass: 'rec', cls: 'pick', title: '따로 연 문서 (B의 축소판)',
+    render: (m) => `
+      ${tabs(m)}
+      <div class="side">
+        <div class="head"><span class="root">📁 내 볼트</span><span class="btn">◎ 폴더 열기</span></div>
+        ${m ? `<div class="flash"><div class="sect">따로 연 문서<span class="cnt">1</span></div>
+               <div class="row f top active">받은자료.md<span class="x">×</span></div>
+               <div class="rule"></div></div>` : ''}
+        ${m ? TREE : TREE_ACTIVE}
+      </div>
+      <div class="status"><span>${m ? '~/Downloads/받은자료.md' : '내 볼트/프로젝트/설계.md'}</span><span>읽기</span></div>`,
+    notes: [
+      ['plus', '폴더 트리가 <b>한 번도 흔들리지 않는다</b>'],
+      ['plus', '읽는 문서가 <b>자기 자리를 갖는다</b> — 하이라이트가 다시 의미를 갖는다'],
+      ['plus', '섹션이 비면 사라져, 볼트만 쓸 때는 <b>지금과 완전히 같은 화면</b>'],
+      ['minus', '섹션·개별 닫기(×)라는 새 UI 개념이 하나 늘어난다'],
+    ],
+  },
+];
+
+let scene = 'vault';
+function setScene(s) {
+  scene = s;
+  document.getElementById('s1').classList.toggle('on', s === 'vault');
+  document.getElementById('s2').classList.toggle('on', s === 'mixed');
+  draw();
+}
+function draw() {
+  const mixed = scene === 'mixed';
+  document.getElementById('grid').innerHTML = CARDS.map((c) => `
+    <div class="card ${c.cls}">
+      <div class="card-head">
+        <div class="tag ${c.tagClass}">${c.tag}</div>
+        <h3>${c.title}</h3>
+      </div>
+      <div class="card-body"><div class="app">${c.render(mixed)}</div></div>
+      <div class="notes">${c.notes.map(([k, t]) => `<p class="${k}">${t}</p>`).join('')}</div>
+    </div>`).join('');
+}
+draw();
+</script>
