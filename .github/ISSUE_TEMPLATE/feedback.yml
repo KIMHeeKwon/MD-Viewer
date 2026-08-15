@@ -1,0 +1,40 @@
+name: 의견 · 수정 요청
+description: 고쳤으면 하는 점이나 있었으면 하는 기능을 알려주세요
+title: "[의견] "
+labels: ["feedback"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        짧아도 괜찮습니다. **무엇이 불편했는지** 한 줄이면 충분합니다.
+
+  - type: textarea
+    id: what
+    attributes:
+      label: 무엇을 고쳤으면 하나요?
+      placeholder: |
+        예) PDF를 열면 항상 첫 페이지로 가는데, 읽던 페이지가 기억되면 좋겠습니다.
+    validations:
+      required: true
+
+  - type: textarea
+    id: why
+    attributes:
+      label: 어떤 상황에서 그렇게 느꼈나요? (선택)
+      description: 언제·어떻게 쓰다가 겪었는지 적어 주시면 판단에 큰 도움이 됩니다.
+    validations:
+      required: false
+
+  - type: input
+    id: env
+    attributes:
+      label: 환경
+      description: 앱이 자동으로 채웁니다. 비어 있으면 도움말 › 환경 정보 복사로 붙여 넣어 주세요.
+    validations:
+      required: false
+
+  - type: markdown
+    attributes:
+      value: |
+        > 이 저장소는 공개되어 있어 작성한 내용도 공개됩니다.
+        > 문서 경로나 문서 내용처럼 알려지면 곤란한 정보는 적지 말아 주세요.

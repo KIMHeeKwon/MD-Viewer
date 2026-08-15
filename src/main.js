@@ -1,6 +1,7 @@
-const { app, BrowserWindow, ipcMain, dialog, Menu, shell, net } = require('electron');
+const { app, BrowserWindow, ipcMain, dialog, Menu, shell, net, clipboard } = require('electron');
 const path = require('node:path');
 const fs = require('node:fs');
+const os = require('node:os');
 const chokidar = require('chokidar');
 
 const FILE_EXT = /\.(md|markdown|mdown|pdf)$/i;
@@ -191,6 +192,9 @@ function buildMenu() {
           label: '릴리스 페이지 열기',
           click: () => shell.openExternal(RELEASES_PAGE),
         },
+        { type: 'separator' },
+        { label: '의견·수정 요청 보내기…', click: () => shell.openExternal(feedbackUrl()) },
+        { label: '환경 정보 복사', click: () => clipboard.writeText(envLine()) },
       ],
     },
   ];
@@ -304,6 +308,19 @@ ipcMain.handle('search:project', async (_e, { root, query }) => {
  * 조회는 렌더러가 요청할 때만 일어난다 — 사용자가 자동 확인을 끄면 아무 요청도 하지 않는다.
  */
 const RELEASES_PAGE = 'https://github.com/KIMHeeKwon/MD-Viewer/releases/latest';
+const NEW_ISSUE_PAGE = 'https://github.com/KIMHeeKwon/MD-Viewer/issues/new';
+
+// 의견에 함께 붙는 환경 정보. 문서 경로·내용은 절대 넣지 않는다 — 공개 저장소로 올라간다.
+function envLine() {
+  return `MD Viewer ${app.getVersion()} · ${process.platform} ${process.arch} (${os.release()}) · Electron ${process.versions.electron}`;
+}
+
+// 채워진 이슈 작성 페이지를 브라우저에서 연다.
+// 앱이 이슈를 직접 등록하려면 토큰이 필요한데, 배포되는 앱에는 토큰을 넣을 수 없다.
+function feedbackUrl() {
+  const q = new URLSearchParams({ template: 'feedback.yml', env: envLine() });
+  return `${NEW_ISSUE_PAGE}?${q}`;
+}
 const canSelfUpdate = () => process.platform === 'win32'
   || (process.platform === 'linux' && !!process.env.APPIMAGE);
 

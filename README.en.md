@@ -87,6 +87,14 @@ On Windows, SmartScreen may show a "Windows protected your PC" dialog → click 
 | Body text larger / smaller | ⌘⌥+ / ⌘⌥− |
 | Zoom whole UI in / out | ⌘+ / ⌘− |
 
+## Sending feedback
+
+**Help › 의견·수정 요청 보내기…** opens a prefilled GitHub issue form — app version and OS are
+filled in automatically, and **one line about what you'd like changed is enough.**
+(No document paths or contents are ever attached.)
+
+Without a GitHub account, use **Help › 환경 정보 복사** to copy just the environment line and send it another way.
+
 ## Development
 
 ```bash
