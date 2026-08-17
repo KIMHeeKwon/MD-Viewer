@@ -1,29 +1,37 @@
-/* DESIGN.md 토큰의 구현 — 방향 C(IDE 다크), Tokyo Night 계열 */
-:root, :root[data-theme="dark"] {
-  --bg: #1a1b26;
-  --fg: #c0caf5;
-  --dim: #565f89;
-  --side: #16161e;
-  --line: #101014;
-  --accent: #7aa2f7;
-  --sel: #292e42;
-  --soft: #24283b;
-  --code-bg: #16161e;
-  --callout-bg: #24283b;
-  --status-fg: #16161e;
-}
-:root[data-theme="light"] {
-  --bg: #f7f8fb;
-  --fg: #2a2e3f;
-  --dim: #8a91a3;
-  --side: #eef0f5;
-  --line: #d5d9e4;
-  --accent: #2e5cc5;
-  --sel: #dfe4f0;
-  --soft: #e4e7ee;
-  --code-bg: #16161e;
-  --callout-bg: #e9edf5;
-  --status-fg: #f7f8fb;
+/* KKOBAK(HKDS) 디자인 시스템 — 토큰 원천.
+ * _ds_bundle.css가 해시 변수(--_1ukhvxl*)와 Space Grotesk 폰트를 정의하고,
+ * theme-tokens.css가 안정적인 --k-* 별칭과 [data-theme="light"] 오버라이드를 얹는다.
+ * 앱 코드는 해시 변수를 직접 참조하지 않는다 (DS 버전이 오르면 이름이 바뀐다). */
+@import "./kkobak/_ds_bundle.css";
+@import "./kkobak/theme-tokens.css";
+
+/* 앱이 쓰는 의미 토큰 → DS 토큰 매핑.
+ * --k-*가 [data-theme]에 따라 스스로 바뀌므로 테마별 블록을 둘로 나눌 필요가 없다. */
+:root {
+  --bg: var(--k-bg);              /* 본문 배경 */
+  --fg: var(--k-text);            /* 본문 텍스트 */
+  --dim: var(--k-muted);          /* 보조 텍스트·비활성 */
+  --side: var(--k-surface);       /* 사이드바·탭바 — DS에서는 배경보다 밝은 '표면'이다 */
+  --line: var(--k-border);        /* 경계선 */
+  --accent: var(--k-accent);      /* 링크·활성 표시 (teal) */
+  --accent2: var(--k-accent2);    /* 보조 강조 (violet) — 위키링크 */
+  --sel: var(--k-surface-hover);  /* 선택 배경 */
+  --soft: var(--k-surface);       /* 인라인 코드·표 헤더 */
+  --callout-bg: var(--k-surface);
+  --status-fg: var(--k-accent-text); /* 상태 바 배경이 --accent이므로 DS의 대비색을 쓴다 */
+  --danger: var(--k-danger);
+  --success: var(--k-success);
+  --warning: var(--k-warning);
+  --radius-sm: var(--k-radius-sm);
+  --radius-md: var(--k-radius-md);
+
+  /* 유일한 예외 — 코드 블록은 두 테마 모두 어둡게 고정한다.
+   * highlight.js 테마를 tokyo-night-dark로 고정해 쓰기 때문이며, 밝은 배경에 올리면
+   * 신택스 색이 보이지 않는다. 값은 KKOBAK 다크의 surface/text이고,
+   * --k-*는 라이트에서 밝은 값으로 바뀌므로 여기서는 참조할 수 없다.
+   * DS 업그레이드 시 theme-tokens.css의 다크 값과 대조해 갱신할 것. */
+  --code-bg: #141A2E;
+  --code-fg: #E6ECFF;
 }
 
 * { box-sizing: border-box; }
@@ -32,7 +40,7 @@ body {
   margin: 0;
   background: var(--bg);
   color: var(--fg);
-  font-family: -apple-system, "Segoe UI", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+  font-family: var(--k-font-body);
   font-size: 13px;
   transition: background .15s ease;
 }
@@ -341,7 +349,8 @@ body.resizing { cursor: col-resize; user-select: none; }
 .doc-body p { margin: 0 0 12px; }
 .doc-body a { color: var(--accent); text-decoration: none; }
 .doc-body a:hover { text-decoration: underline; }
-.doc-body .wikilink { border-bottom: 1px dashed var(--accent); cursor: pointer; }
+/* 위키링크는 보조 강조색(violet)으로 — 외부 링크(accent)와 구분한다 */
+.doc-body .wikilink { color: var(--accent2); border-bottom: 1px dashed var(--accent2); cursor: pointer; }
 .doc-body blockquote {
   margin: 12px 0;
   padding: 2px 16px;
@@ -361,28 +370,28 @@ body.resizing { cursor: col-resize; user-select: none; }
 
 /* 코드 */
 .doc-body code {
-  font-family: "JetBrains Mono", "SF Mono", "Cascadia Code", Consolas, monospace;
+  font-family: var(--k-font-mono);
   font-size: 0.867em;
   background: var(--soft);
   padding: 2px 6px;
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
 }
 .doc-body pre {
   background: var(--code-bg);
   border: 1px solid var(--line);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   padding: 14px 16px;
   overflow-x: auto;
   margin: 12px 0;
   line-height: 1.6;
 }
-.doc-body pre code { background: none; padding: 0; color: #c0caf5; }
+.doc-body pre code { background: none; padding: 0; color: var(--code-fg); }
 
 /* 콜아웃 (Obsidian) */
 .doc-body .callout {
   border-left: 3.5px solid var(--accent);
   background: var(--callout-bg);
-  border-radius: 0 8px 8px 0;
+  border-radius: 0 var(--radius-md) var(--radius-md) 0;
   padding: 10px 16px;
   margin: 12px 0;
   color: var(--fg);
@@ -403,12 +412,12 @@ body.resizing { cursor: col-resize; user-select: none; }
 .callout.collapsed > *:not(.callout-title) { display: none; }
 .callout.collapsed .callout-title { margin-bottom: 0; }
 .callout.collapsed { padding-top: 6px; padding-bottom: 6px; }
-.callout-warning, .callout-caution { border-left-color: #e0af68; }
-.callout-warning .callout-title, .callout-caution .callout-title { color: #e0af68; }
-.callout-important, .callout-danger, .callout-error { border-left-color: #f7768e; }
-.callout-important .callout-title, .callout-danger .callout-title, .callout-error .callout-title { color: #f7768e; }
-.callout-tip, .callout-success { border-left-color: #9ece6a; }
-.callout-tip .callout-title, .callout-success .callout-title { color: #9ece6a; }
+.callout-warning, .callout-caution { border-left-color: var(--warning); }
+.callout-warning .callout-title, .callout-caution .callout-title { color: var(--warning); }
+.callout-important, .callout-danger, .callout-error { border-left-color: var(--danger); }
+.callout-important .callout-title, .callout-danger .callout-title, .callout-error .callout-title { color: var(--danger); }
+.callout-tip, .callout-success { border-left-color: var(--success); }
+.callout-tip .callout-title, .callout-success .callout-title { color: var(--success); }
 
 /* 작업 목록 */
 .doc-body .task-list-item { list-style: none; }
@@ -435,7 +444,7 @@ body.resizing { cursor: col-resize; user-select: none; }
   align-items: center;
   justify-content: space-between;
   padding: 0 12px;
-  font-family: "JetBrains Mono", "SF Mono", Consolas, monospace;
+  font-family: var(--k-font-mono);
   font-size: 11.5px;
   white-space: nowrap;
 }
@@ -491,7 +500,7 @@ body.edit-mode .doc-body > *:hover {
   border: none;
   background: none;
   color: var(--fg);
-  font-family: "JetBrains Mono", "SF Mono", Consolas, monospace;
+  font-family: var(--k-font-mono);
   font-size: calc(var(--doc-font-size, 15px) * .92);
   line-height: 1.75;
   resize: none;
@@ -506,10 +515,10 @@ body.edit-mode .doc-body > *:hover {
   margin: 0 0 16px;
   padding: 10px 12px;
   border: 1px solid var(--accent);
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   background: var(--soft);
   color: var(--fg);
-  font-family: "JetBrains Mono", "SF Mono", Consolas, monospace;
+  font-family: var(--k-font-mono);
   font-size: .92em;
   line-height: 1.6;
   resize: none;
@@ -539,8 +548,8 @@ body.edit-mode .doc-body > *:hover {
   border: 1px solid var(--line);
   border-radius: 8px;
   padding: 5px 10px;
-  box-shadow: 0 3px 12px rgba(0, 0, 0, .3);
-  font-family: "JetBrains Mono", "SF Mono", Consolas, monospace;
+  box-shadow: var(--k-shadow-md);
+  font-family: var(--k-font-mono);
   font-size: 12px;
 }
 .pdf-toolbar button {
@@ -622,18 +631,22 @@ body.edit-mode .doc-body > *:hover {
 /* PDF 내보내기 — 활성 문서만, 화면 테마와 무관하게 항상 라이트(인쇄) 테마로 강제 */
 @media print {
   :root, :root[data-theme="dark"], :root[data-theme="light"] {
+    /* KKOBAK 라이트 팔레트. 인쇄는 테마와 무관하게 고정값이어야 하므로 --k-*를 쓰지 않는다 */
     --bg: #ffffff;
-    --fg: #1f2328;
-    --dim: #59636e;
-    --line: #d1d9e0;
-    --accent: #0a5bd3;
-    --sel: #eef1f5;
-    --soft: #f0f2f5;
-    --code-bg: #f6f8fa;
-    --callout-bg: #f0f4fa;
+    --fg: #191D28;
+    --dim: #5C6478;
+    --line: #DBDFE8;
+    --accent: #18766D;
+    --sel: #E8EBF1;
+    --soft: #FBFCFD;
+    --code-bg: #F2F4F7;
+    --callout-bg: #FBFCFD;
+    --danger: #A8414D;
+    --success: #327256;
+    --warning: #87641A;
   }
   /* 다크용 신택스 색은 밝은 배경에서 안 보이므로 단색으로 통일 (잉크 친화) */
-  .doc-body pre code, .doc-body pre code span { color: #1f2328 !important; }
+  .doc-body pre code, .doc-body pre code span { color: #191D28 !important; }
   #sidebar, #resizer, #tabbar, #statusbar, #findbar { display: none !important; }
   /* 검색 하이라이트는 인쇄물에 남기지 않는다 */
   mark.find-hl, mark.find-hl-active { background: transparent !important; color: inherit !important; }
@@ -670,7 +683,7 @@ body.edit-mode .doc-body > *:hover {
 .gp-title { font-weight: 650; font-size: 13px; }
 .gp-spacer { flex: 1; }
 #gp-info {
-  font-family: "JetBrains Mono", "SF Mono", Consolas, monospace;
+  font-family: var(--k-font-mono);
   font-size: 11.5px;
   color: var(--dim);
   font-variant-numeric: tabular-nums;
@@ -725,7 +738,7 @@ body.edit-mode .doc-body > *:hover {
 }
 #sp-input:focus { border-color: var(--accent); }
 #sp-summary {
-  font-family: "JetBrains Mono", "SF Mono", Consolas, monospace;
+  font-family: var(--k-font-mono);
   font-size: 12px;
   color: var(--dim);
   white-space: nowrap;
@@ -761,7 +774,7 @@ body.edit-mode .doc-body > *:hover {
 .sp-line:hover { background: var(--sel); }
 .sp-lineno {
   color: var(--dim);
-  font-family: "JetBrains Mono", "SF Mono", Consolas, monospace;
+  font-family: var(--k-font-mono);
   font-size: 12px;
   min-width: 40px;
   text-align: right;
@@ -774,7 +787,7 @@ body.edit-mode .doc-body > *:hover {
   text-overflow: ellipsis;
   color: var(--fg);
 }
-.sp-linetext mark { background: #ffd45e; color: #1a1b26; border-radius: 2px; }
+.sp-linetext mark { background: var(--warning); color: var(--k-bg); border-radius: 2px; }
 .sp-empty { color: var(--dim); padding: 24px 20px; }
 
 /* 문서 내 찾기 바 */
@@ -805,7 +818,7 @@ body.edit-mode .doc-body > *:hover {
 }
 #find-input:focus { border-color: var(--accent); }
 #find-input:disabled { opacity: .6; }
-#find-input.invalid { border-color: #f7768e; }
+#find-input.invalid { border-color: var(--danger); }
 
 /* 찾기 옵션 토글 (Aa · .*) */
 .find-opt {
@@ -815,14 +828,14 @@ body.edit-mode .doc-body > *:hover {
   border-radius: 4px;
   padding: 3px 6px;
   cursor: pointer;
-  font-family: "JetBrains Mono", "SF Mono", Consolas, monospace;
+  font-family: var(--k-font-mono);
   font-size: 11.5px;
   line-height: 1.2;
 }
 .find-opt:hover { color: var(--fg); }
 .find-opt.on { background: var(--accent); color: #fff; border-color: var(--accent); }
 #find-count {
-  font-family: "JetBrains Mono", "SF Mono", Consolas, monospace;
+  font-family: var(--k-font-mono);
   font-size: 12px;
   color: var(--dim);
   min-width: 46px;
@@ -840,8 +853,8 @@ body.edit-mode .doc-body > *:hover {
 }
 #findbar button:hover { color: var(--accent); }
 mark.find-hl {
-  background: #ffd45e;
-  color: #1a1b26;
+  background: var(--warning);
+  color: var(--k-bg);
   border-radius: 2px;
   scroll-margin: 80px;
 }

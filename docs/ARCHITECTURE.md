@@ -77,7 +77,8 @@ Windows WebView2). 목표 1(어디서나 같은 모습)과 정면 충돌해 기�
 | `src/renderer/renderer.js` | 1,755 | 마크다운 파이프라인, 탭·트리·아웃라인·백링크, 편집, 찾기, PDF, 내보내기 트리거 |
 | `src/renderer/edit-core.mjs` | 52 | **순수 함수만.** 줄 범위 교체 계산 (DOM·Electron 의존 0) |
 | `src/renderer/graph.js` | 402 | 연결 그래프 — 자체 구현 힘-지향 레이아웃 + 캔버스 렌더링 |
-| `src/renderer/styles.css` | 921 | [[DESIGN]] 토큰 구현, 인쇄 CSS 포함 |
+| `src/renderer/styles.css` | 921 | [[DESIGN]] 토큰 매핑 + 앱 스타일, 인쇄 CSS 포함 |
+| `src/renderer/kkobak/` | — | **KKOBAK(HKDS) 디자인 시스템** 토큰·폰트. 외부 산출물이라 직접 고치지 않는다 |
 | `src/renderer/index.html` | 101 | 정적 골격 (사이드바·탭바·패널·상태 바) |
 | `test/edit-core.test.mjs` | 186 | 문서 손실 방지 단위 테스트 20건 |
 
@@ -504,7 +505,8 @@ npx electron . --remote-debugging-port=9222 --user-data-dir=<임시 프로필>
 | 새 파일 접근 기능 | `main.js`에 IPC 추가 → **`preload.js`에 노출**(빠뜨리면 렌더러가 못 쓴다) |
 | 새 메뉴 항목 | `main.js` `buildMenu()` + `preload.js`의 채널 allowlist + 렌더러 `onMenu` |
 | 편집 계산 변경 | **`edit-core.mjs` + 테스트 동시 수정.** 여기만은 테스트 없이 고치지 않는다 |
-| 시각 변경 | [[DESIGN]] 토큰을 먼저 고친다. 토큰 외 색 추가 금지 |
+| 시각 변경 | **DS 토큰(`--k-*`)을 쓴다.** hex·해시 변수 직접 참조 금지. 매핑 표와 예외는 [[DESIGN]] |
+| DS 업그레이드 | `src/renderer/kkobak/` 교체 후 [[DESIGN]] §8 절차(고정값 2곳 대조 + 두 테마 실측) |
 | 그래프 튜닝 | `graph.js` 상단 상수 5개 + `forceParams()` |
 | 새 진입점 | **메뉴 전용은 금지에 가깝다** — 발견성이 낮고 자동 검증도 불가하다. 상태 바·사이드바 병행 ([[DECISIONS\|D15]]·[[DECISIONS\|D37]]) |
 
