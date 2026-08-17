@@ -165,3 +165,5 @@ DS 업그레이드 시 §3.2와 함께 갱신 대상이다.
 - [[ARCHITECTURE]] — 시스템 구조 (이 문서는 그중 시각 층만 다룬다)
 - [[DECISIONS]] — 결정 이력
 - `design_handoff_kkobak_ds/README.md` — DS 원본 핸드오프 문서 (토큰 값 표 포함)
+- `design_handoff_kkobak_ds/DS-USAGE-RULES.md` — DS 원본의 사용 규약. **React 전제라 이 저장소에는
+  적용되지 않는다** (원래 이름 `CLAUDE.md`였고, 프로젝트 지침으로 오독될 소지가 있어 개명 — 2026-08-17)

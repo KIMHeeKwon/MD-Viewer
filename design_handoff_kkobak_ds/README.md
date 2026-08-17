@@ -31,7 +31,7 @@ kkobak/
   styles.css          단일 진입점 — _ds_bundle.css 를 @import
   theme-tokens.css    ★ 안정적 --k-* 별칭 + 라이트 테마 오버라이드 (이 프로젝트 추가분)
   _ds_manifest.json   DS 메타데이터
-CLAUDE.md             Claude Code용 작업 규칙 — 저장소 루트에 두면 자동 참조됨
+DS-USAGE-RULES.md     DS 사용 규약 (원래 이름 CLAUDE.md) — 이 저장소에는 적용하지 않는다
 example.html          최소 동작 예제 (테마 토글 포함) — 브라우저로 바로 열림
 reference/            디자인 레퍼런스 HTML (토큰·컴포넌트 전수 카탈로그)
 ```
@@ -39,8 +39,9 @@ reference/            디자인 레퍼런스 HTML (토큰·컴포넌트 전수 �
 ## Setup
 
 1. `kkobak/` 를 정적 자산 경로에 복사 (예: `public/kkobak/`)
-2. `CLAUDE.md` 를 저장소 루트에 복사 — Claude Code가 매 세션 자동으로 읽는다
-   (이미 CLAUDE.md가 있으면 내용을 이어붙인다)
+2. ~~`CLAUDE.md` 를 저장소 루트에 복사~~ — **이 프로젝트에서는 하지 않았다.**
+   그 규칙은 React 컴포넌트 사용을 전제로 하는데 우리는 토큰만 채택했다(DECISIONS D47).
+   해당 파일은 `DS-USAGE-RULES.md`로 이름을 바꿔 참고 자료로만 둔다 (2026-08-17)
 3. React가 로드된 뒤 아래 3줄 삽입:
 
 ```html
@@ -197,7 +198,7 @@ DS 자체는 상태를 갖지 않는다 (`Dialog`도 controlled). 앱에서 필�
 
 - [ ] `kkobak/` 정적 경로에 배치, 3줄 로드 확인
 - [ ] `example.html` 이 브라우저에서 정상 렌더 (다크/라이트 토글 동작)
-- [ ] `CLAUDE.md` 저장소 루트에 배치
+- [x] ~~`CLAUDE.md` 저장소 루트에 배치~~ — 해당 없음 (토큰만 채택)
 - [ ] 앱 트리 최상단이 `ThemeProvider`로 감싸짐
 - [ ] 기존 화면의 하드코딩 색상을 `vars.color.*` 로 치환
 - [ ] Button/Card/Badge 자체 구현이 있으면 DS 컴포넌트로 교체
