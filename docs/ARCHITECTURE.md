@@ -4,8 +4,9 @@
 > [[DECISIONS]], 왜 그렇게 생각했는지는 [[RATIONALE]], 색·타이포 토큰은 [[DESIGN]],
 > 사용법은 [[USER-GUIDE]]가 각각 단일 원천이다. 여기서는 결정의 *결과로 만들어진 구조*만 다룬다.
 >
-> 기준 버전: **v0.14.0** (2026-08-15 코드 실측). 코드 총 4,142줄
-> (main 688 · renderer 1,755 · graph 402 · styles 921 · edit-core 52 · preload 37 · html 101 · test 186).
+> 기준 버전: **v0.15.0** (2026-08-17 코드 실측). 앱 코드 총 4,155줄
+> (main 688 · renderer 1,755 · graph 402 · styles 934 · edit-core 52 · preload 37 · html 101 · test 186).
+> 여기에 외부 산출물인 디자인 시스템 자산 131KB(`src/renderer/kkobak/`)가 얹힌다 — 직접 고치지 않는다.
 
 ---
 
@@ -42,7 +43,7 @@ Electron의 두 프로세스로 나뉘며, **권한 경계가 곧 설계 경계*
 
 | | main 프로세스 | renderer 프로세스 |
 |---|---|---|
-| 파일 | `src/main.js` (688줄) | `src/renderer/*` (3,179줄) |
+| 파일 | `src/main.js` (688줄) | `src/renderer/*` (3,192줄 + DS 자산) |
 | 권한 | Node.js 전체 (fs, 대화상자, 메뉴, 네트워크) | **없음** — `sandbox: true`, `nodeIntegration: false`, `contextIsolation: true` |
 | 책임 | 파일 읽기·쓰기, 폴더 스캔, 파일 감시, 메뉴, 업데이트, 네이티브 대화상자 | 마크다운 렌더링, 모든 UI 상태, 편집 계산, 그래프 그리기 |
 
@@ -77,13 +78,50 @@ Windows WebView2). 목표 1(어디서나 같은 모습)과 정면 충돌해 기�
 | `src/renderer/renderer.js` | 1,755 | 마크다운 파이프라인, 탭·트리·아웃라인·백링크, 편집, 찾기, PDF, 내보내기 트리거 |
 | `src/renderer/edit-core.mjs` | 52 | **순수 함수만.** 줄 범위 교체 계산 (DOM·Electron 의존 0) |
 | `src/renderer/graph.js` | 402 | 연결 그래프 — 자체 구현 힘-지향 레이아웃 + 캔버스 렌더링 |
-| `src/renderer/styles.css` | 921 | [[DESIGN]] 토큰 매핑 + 앱 스타일, 인쇄 CSS 포함 |
-| `src/renderer/kkobak/` | — | **KKOBAK(HKDS) 디자인 시스템** 토큰·폰트. 외부 산출물이라 직접 고치지 않는다 |
+| `src/renderer/styles.css` | 934 | DS 토큰 매핑 + 앱 스타일, 인쇄 CSS 포함 ([[DESIGN]]) |
+| `src/renderer/kkobak/` | 131KB | **KKOBAK(HKDS) 디자인 시스템** 토큰·폰트. 외부 산출물이라 직접 고치지 않는다 |
 | `src/renderer/index.html` | 101 | 정적 골격 (사이드바·탭바·패널·상태 바) |
 | `test/edit-core.test.mjs` | 186 | 문서 손실 방지 단위 테스트 20건 |
 
 `edit-core.mjs`만 `.mjs`인 이유: **Node가 번들러 없이 직접 import해 테스트**해야 하기 때문이다
 (패키지가 CJS 기본이라 `.js`로는 ESM import가 안 된다).
+
+### 2.4 스타일 층 — 디자인 시스템 통합
+
+시각 언어는 **KKOBAK(HKDS) 디자인 시스템**에서 온다 (2026-08-17 채택, [[DECISIONS|D47~D51]]).
+CSS는 세 겹이며, **아래 겹은 위 겹을 모른다.**
+
+```
+kkobak/_ds_bundle.css     ← DS 원본: 해시 변수(--_1ukhvxl*) + Space Grotesk @font-face 3종
+kkobak/theme-tokens.css   ← 안정 별칭 --k-*  +  [data-theme="light"] 오버라이드
+styles.css :root { }      ← 앱 의미 토큰(--bg·--fg…)을 --k-*에 매핑
+styles.css 나머지         ← 앱 스타일. DS를 전혀 모른 채 의미 토큰만 쓴다
+```
+
+esbuild가 `@import`를 따라가 `renderer-dist/renderer.css` 하나(174KB)로 번들한다.
+
+**이 구조에서 나오는 성질 세 가지**
+
+1. **앱 스타일은 DS 교체에 영향받지 않는다.** 매핑 한 겹만 갈아끼우면 되고, 실제로 DS를
+   도입할 때 900줄 넘는 기존 스타일을 **한 줄도 고치지 않았다.**
+2. **테마 분기가 사라졌다.** `--k-*`가 `[data-theme]`에 따라 스스로 바뀌므로 앱 쪽에
+   다크/라이트 두 벌을 둘 필요가 없다. 테마 토큰 블록은 **하나뿐이다.**
+3. **해시 변수는 앱 코드에서 금지다.** vanilla-extract가 생성한 이름이라 DS 버전이 오르면
+   바뀐다. `--k-*`만 참조한다.
+
+**두 곳의 고정값 예외** — `--k-*`를 쓸 수 없어 값을 직접 적은 자리이며, DS 업그레이드 시
+수동 대조 대상이다 ([[DESIGN]] §3.2·§7·§8).
+
+| 예외 | 이유 |
+|---|---|
+| 코드 블록 (`--code-bg`·`--code-fg`) | highlight.js를 `tokyo-night-dark`로 고정해 쓴다. 두 테마 모두 어두워야 신택스 색이 보인다 |
+| 인쇄 CSS(`@media print`) | 화면 테마와 무관하게 라이트 고정이어야 한다. `--k-*`는 현재 테마를 따라가 버린다 |
+
+**빌드 외 의존성 하나**: 폰트가 base64 `data:` URI로 내장돼 있어 `index.html`의 CSP
+`font-src`에 **`data:`가 반드시 있어야 한다.** 빠지면 오류 없이 조용히 폴백된다.
+
+DS의 React 컴포넌트 9종은 **채택하지 않았다** — 이 앱은 바닐라 렌더러이고, 컴포넌트를 쓰려면
+UI 전면 재작성이 필요하다. 시각 언어는 토큰만으로 구현된다 ([[DESIGN]] §1).
 
 ---
 
@@ -176,6 +214,10 @@ const state = {
 ```
 원문 → markdown-it(+플러그인 5종) → HTML 문자열 → DOM 후처리 5단계 → 화면
 ```
+
+이 장은 **문서를 구조로 바꾸는 과정**만 다룬다. 그 결과가 어떤 색·서체로 보이는지는
+스타일 층(§2.4)의 몫이며, 두 층은 서로를 모른다 — 파이프라인은 클래스만 붙이고,
+스타일 층은 그 클래스에 의미 토큰을 입힌다.
 
 ### 5.1 markdown-it 구성
 
@@ -494,6 +536,8 @@ npx electron . --remote-debugging-port=9222 --user-data-dir=<임시 프로필>
 | 되돌리기의 수명 | 앱을 켜 둔 동안만. 디스크에 남기지 않는다 |
 | 폴더 스캔 깊이 | 8단계 |
 | 편집 단위 | 최상위 블록 (리스트·표는 통째로) |
+| DS 컴포넌트 미채택 | React가 없어 토큰만 쓴다. 컴포넌트가 필요해지면 React 도입부터 결정해야 한다 |
+| DS 업그레이드 시 수동 대조 2곳 | 코드 블록 고정값·인쇄 팔레트 (§2.4). 자동 검출 수단이 없다 |
 
 ---
 
@@ -522,6 +566,8 @@ npx electron . --remote-debugging-port=9222 --user-data-dir=<임시 프로필>
 | **따로 연 문서** | 열린 폴더 트리 밖에서 연 문서. 사이드바 별도 섹션 |
 | **되먹임 억제** | 앱이 쓴 저장을 파일 감시자가 외부 변경으로 오인하지 않게 삼키는 장치 |
 | **loose** | `state.loose` — 따로 연 문서의 내부 이름 |
+| **의미 토큰** | 앱이 쓰는 색 이름(`--bg`·`--fg`…). DS 토큰 `--k-*`를 가리키는 한 겹 (§2.4) |
+| **DS 토큰** | KKOBAK이 정의한 `--k-*`. 값의 원천이며 앱은 이것만 참조한다 |
 
 ---
 
@@ -529,7 +575,7 @@ npx electron . --remote-debugging-port=9222 --user-data-dir=<임시 프로필>
 
 - [[DECISIONS]] — 무엇으로 정했나 (D1~D46)
 - [[RATIONALE]] — 왜 그렇게 생각했나 (논증·관점 전복·실패의 교훈)
-- [[DESIGN]] — 색·타이포·레이아웃 토큰과 금지 목록
+- [[DESIGN]] — KKOBAK 디자인 시스템을 어떻게 쓰는가 (매핑표·예외·금지 목록·업그레이드 절차)
 - [[FAILURES]] — 재발 방지 규칙 (Active Rules)
 - [[USER-GUIDE]] — 설치·사용법·단축키 (OS별)
 - [[AI-AUTHORING]] — LLM에게 문서를 시킬 때의 규약
