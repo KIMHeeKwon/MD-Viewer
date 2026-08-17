@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>KKOBAK (HKDS) — 최소 예제</title>
+<link rel="stylesheet" href="kkobak/styles.css">
+<link rel="stylesheet" href="kkobak/theme-tokens.css">
+<style>
+  html, body { margin: 0; }
+  body { background: var(--k-bg); }
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+<script src="kkobak/_ds_bundle.js"></script>
+<script>
+const { createElement: h, useState } = React;
+const { ThemeProvider, Card, Stack, Text, Button, Badge, Input, Checkbox, Select, Dialog, vars } = window.HKDS;
+
+function App() {
+  const [theme, setTheme] = useState("dark");
+  const [open, setOpen] = useState(false);
+
+  return h(ThemeProvider, {
+    "data-theme": theme,
+    style: { minHeight: "100vh", padding: vars.space.xxl,
+             transition: "background 160ms linear, color 160ms linear" }
+  },
+    h(Stack, { gap: "xl", style: { maxWidth: 640, margin: "0 auto" } },
+
+      h(Stack, { direction: "row", gap: "sm", align: "center", justify: "space-between" },
+        h(Text, { as: "h1", size: "xxl", weight: "bold" }, "HKDS"),
+        h(Stack, { direction: "row", gap: "sm" },
+          h(Button, { size: "sm", variant: theme === "dark" ? "primary" : "ghost",
+                      onClick: () => setTheme("dark") }, "다크"),
+          h(Button, { size: "sm", variant: theme === "light" ? "primary" : "ghost",
+                      onClick: () => setTheme("light") }, "라이트")
+        )
+      ),
+
+      h(Card, { padding: "lg" },
+        h(Stack, { gap: "md" },
+          h(Text, { as: "h2", size: "xl", weight: "bold" }, "컴포넌트 확인"),
+          h(Text, { tone: "muted" }, "테마를 바꾸면 DS 컴포넌트가 함께 전환됩니다."),
+          h(Stack, { direction: "row", gap: "sm", wrap: true },
+            h(Badge, { tone: "accent" }, "accent"),
+            h(Badge, { tone: "violet" }, "violet"),
+            h(Badge, { tone: "success" }, "success"),
+            h(Badge, { tone: "warning" }, "warning"),
+            h(Badge, { tone: "danger" }, "danger")
+          ),
+          h(Input, { placeholder: "이름" }),
+          h(Select, null,
+            h("option", null, "옵션 A"),
+            h("option", null, "옵션 B")
+          ),
+          h(Checkbox, { label: "약관에 동의합니다" }),
+          h(Stack, { direction: "row", gap: "sm", wrap: true },
+            h(Button, { variant: "primary", onClick: () => setOpen(true) }, "Dialog 열기"),
+            h(Button, { variant: "secondary" }, "Secondary"),
+            h(Button, { variant: "ghost" }, "Ghost"),
+            h(Button, { variant: "danger" }, "Danger")
+          )
+        )
+      ),
+
+      h("div", { style: { background: vars.color.surface, border: "1px solid " + vars.color.border,
+                          borderRadius: vars.radius.lg, padding: vars.space.lg,
+                          boxShadow: vars.shadow.glow } },
+        h(Text, { size: "sm", tone: "muted" },
+          "vars 토큰으로 직접 조립한 커스텀 서피스 — hex 하드코딩 없음.")
+      ),
+
+      h(Dialog, { open: open, onClose: () => setOpen(false), title: "확인",
+                  footer: h(Button, { variant: "primary", onClick: () => setOpen(false) }, "닫기") },
+        h(Text, { tone: "muted" }, "네이티브 <dialog> 기반이라 ESC로도 닫힙니다.")
+      )
+    )
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(h(App));
+</script>
+</body>
+</html>

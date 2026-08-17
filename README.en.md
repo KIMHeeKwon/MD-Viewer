@@ -24,6 +24,9 @@ conventions for notes that keep accumulating:
 A per-OS manual covering installation, usage, and shortcuts is also included:
 **→ [User guide (macOS · Windows · Linux)](docs/USER-GUIDE.md)** (written in Korean)
 
+How the system is built — process model, IPC contract, rendering/editing pipelines, verification strategy:
+**→ [Architecture](docs/ARCHITECTURE.md)** (written in Korean)
+
 ## Features
 
 - **Rich syntax support** — GFM (tables, task lists, strikethrough, footnotes), KaTeX math, Mermaid diagrams, code syntax highlighting, Obsidian wikilinks & callouts

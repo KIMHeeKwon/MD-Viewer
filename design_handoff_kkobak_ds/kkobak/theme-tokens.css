@@ -1,0 +1,98 @@
+/* KKOBAK (HKDS) — 안정적 토큰 별칭 + 라이트 테마 오버라이드
+ *
+ * 왜 필요한가:
+ *  - HKDS는 vanilla-extract로 빌드되어 CSS 변수명이 해시(--_1ukhvxl0 …)됩니다.
+ *    이 이름은 DS 버전이 올라가면 바뀔 수 있으므로, 앱 코드에서는 아래 --k-* 별칭이나
+ *    window.HKDS.vars 를 참조하세요.
+ *  - HKDS 원본은 다크 전용입니다. 라이트 테마는 같은 해시 변수에 밝은 값을 덮어써서
+ *    Button/Badge/Card 등 DS 컴포넌트까지 함께 전환시키는 방식으로 구현합니다.
+ *
+ * 사용: styles.css(=_ds_bundle.css) 뒤에 이 파일을 로드.
+ *      라이트로 쓰려면 감싸는 엘리먼트에 data-theme="light".
+ *
+ * ⚠ DS를 업그레이드하면 아래 해시 변수명이 유효한지 _ds_bundle.css의 :root 블록에서
+ *   확인하세요. 순서(0..1d)는 아래 주석의 의미와 1:1 대응입니다.
+ */
+
+:root {
+  --k-bg:            var(--_1ukhvxl0);
+  --k-surface:       var(--_1ukhvxl1);
+  --k-surface-hover: var(--_1ukhvxl2);
+  --k-text:          var(--_1ukhvxl3);
+  --k-muted:         var(--_1ukhvxl4);
+  --k-border:        var(--_1ukhvxl5);
+  --k-border-strong: var(--_1ukhvxl6);
+  --k-accent:        var(--_1ukhvxl7);
+  --k-accent-hover:  var(--_1ukhvxl8);
+  --k-accent-active: var(--_1ukhvxl9);
+  --k-accent-text:   var(--_1ukhvxla);
+  --k-accent2:       var(--_1ukhvxlb);
+  --k-accent2-hover: var(--_1ukhvxlc);
+  --k-accent2-text:  var(--_1ukhvxld);
+  --k-danger:        var(--_1ukhvxle);
+  --k-danger-text:   var(--_1ukhvxlf);
+  --k-success:       var(--_1ukhvxlg);
+  --k-warning:       var(--_1ukhvxlh);
+  --k-focus-ring:    var(--_1ukhvxli);
+  --k-overlay:       var(--_1ukhvxlj);
+
+  --k-font-body: var(--_1ukhvxlk);
+  --k-font-mono: var(--_1ukhvxll);
+
+  --k-text-xs: var(--_1ukhvxlm);  /* 12px */
+  --k-text-sm: var(--_1ukhvxln);  /* 14px */
+  --k-text-md: var(--_1ukhvxlo);  /* 16px */
+  --k-text-lg: var(--_1ukhvxlp);  /* 18px */
+  --k-text-xl: var(--_1ukhvxlq);  /* 24px */
+  --k-text-xxl: var(--_1ukhvxlr); /* 32px */
+
+  --k-space-xs: var(--_1ukhvxly);   /*  4px */
+  --k-space-sm: var(--_1ukhvxlz);   /*  8px */
+  --k-space-md: var(--_1ukhvxl10);  /* 12px */
+  --k-space-lg: var(--_1ukhvxl11);  /* 16px */
+  --k-space-xl: var(--_1ukhvxl12);  /* 24px */
+  --k-space-xxl: var(--_1ukhvxl13); /* 32px */
+  --k-space-xxxl: var(--_1ukhvxl14);/* 48px */
+
+  --k-radius-sm: var(--_1ukhvxl16);   /*  6px */
+  --k-radius-md: var(--_1ukhvxl17);   /* 10px */
+  --k-radius-lg: var(--_1ukhvxl18);   /* 16px */
+  --k-radius-full: var(--_1ukhvxl19); /* 9999px */
+
+  --k-shadow-sm:   var(--_1ukhvxl1a);
+  --k-shadow-md:   var(--_1ukhvxl1b);
+  --k-shadow-lg:   var(--_1ukhvxl1c);
+  --k-shadow-glow: var(--_1ukhvxl1d);
+}
+
+/* ── LIGHT THEME ───────────────────────────────────────────────
+   원본 다크 값 위에 밝은 값을 덮어씁니다. 다크의 네온 팔레트를 그대로 밝게
+   뒤집으면 채도가 튀어 조악해지므로, 유채색은 채도를 낮추고 명도를 내렸고
+   중립색은 청색 기운을 빼 뉴트럴 그레이로 맞췄습니다. 간격·타이포·라운드는
+   두 테마 공통이라 오버라이드하지 않습니다. */
+[data-theme="light"] {
+  --_1ukhvxl0: #F2F4F7;  /* bg */
+  --_1ukhvxl1: #FBFCFD;  /* surface */
+  --_1ukhvxl2: #E8EBF1;  /* surfaceHover */
+  --_1ukhvxl3: #191D28;  /* text */
+  --_1ukhvxl4: #5C6478;  /* textMuted */
+  --_1ukhvxl5: #DBDFE8;  /* border */
+  --_1ukhvxl6: #B5BCCA;  /* borderStrong */
+  --_1ukhvxl7: #18766D;  /* accent */
+  --_1ukhvxl8: #1E8B81;  /* accentHover */
+  --_1ukhvxl9: #125E58;  /* accentActive */
+  --_1ukhvxla: #FFFFFF;  /* accentText */
+  --_1ukhvxlb: #594F98;  /* accent2 */
+  --_1ukhvxlc: #6A60AC;  /* accent2Hover */
+  --_1ukhvxld: #FFFFFF;  /* accent2Text */
+  --_1ukhvxle: #A8414D;  /* danger */
+  --_1ukhvxlf: #FFFFFF;  /* dangerText */
+  --_1ukhvxlg: #327256;  /* success */
+  --_1ukhvxlh: #87641A;  /* warning */
+  --_1ukhvxli: #18766D;  /* focusRing */
+  --_1ukhvxlj: rgba(25, 29, 40, .4);       /* overlay */
+  --_1ukhvxl1a: 0 1px 2px rgba(25, 29, 40, .07);
+  --_1ukhvxl1b: 0 4px 12px rgba(25, 29, 40, .09);
+  --_1ukhvxl1c: 0 12px 32px rgba(25, 29, 40, .13);
+  --_1ukhvxl1d: 0 0 0 1px rgba(24, 118, 109, .40), 0 0 18px rgba(24, 118, 109, .14);
+}

@@ -22,6 +22,9 @@ LLM이 자주 넣지만 렌더링되지 않는 것들(원시 HTML 등), 문서�
 설치·사용법·단축키를 OS별로 정리한 안내서도 있습니다:
 **→ [사용설명서 (macOS · Windows · Linux)](docs/USER-GUIDE.md)**
 
+시스템이 어떻게 만들어져 있는지(프로세스 구조 · IPC 계약 · 렌더링/편집 파이프라인 · 검증 전략):
+**→ [설계문서 (ARCHITECTURE)](docs/ARCHITECTURE.md)**
+
 ## 주요 기능
 
 - **폭넓은 문법 지원** — GFM(표 · 작업 목록 · 취소선 · 각주), KaTeX 수식, Mermaid 다이어그램, 코드 신택스 하이라이트, Obsidian 위키링크 · 콜아웃

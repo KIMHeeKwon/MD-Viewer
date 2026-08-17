@@ -1,9 +1,12 @@
 # CLAUDE.md — MD-Viewer-ALL 프로젝트 지침
 
 > 전역 지침(`~/.claude/CLAUDE.md`, `~/.claude/rules/*`)에 대한 **프로젝트 오버라이드**.
-> 여기에는 이 저장소에서만 유효한 고정 사실과 절차만 적는다. 결정 이력은 [[DECISIONS]],
-> 디자인 토큰은 [[DESIGN]], 재발 방지 규칙은 [[FAILURES]], 진행 로그는 [[WORKLOG]],
-> 사고 과정은 [[RATIONALE]]에 있다.
+> 여기에는 이 저장소에서만 유효한 고정 사실과 절차만 적는다. **시스템 구조는 [[ARCHITECTURE]]**,
+> 결정 이력은 [[DECISIONS]], 디자인 토큰은 [[DESIGN]], 재발 방지 규칙은 [[FAILURES]],
+> 진행 로그는 [[WORKLOG]], 사고 과정은 [[RATIONALE]]에 있다.
+>
+> **코드를 고치기 전에 [[ARCHITECTURE]]를 먼저 읽는다** — 특히 §5.2(DOM 후처리 순서 의존성),
+> §6(편집 서브시스템), §17(확장 포인트).
 
 ## 1. 프로젝트 성격
 

@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="_ds/kkobak-03272dcd-2cc4-4cad-9c3a-200ab4a4bcc0/_ds_bundle.css">
+  <link rel="stylesheet" href="_ds/kkobak-03272dcd-2cc4-4cad-9c3a-200ab4a4bcc0/styles.css">
+  <script src="_ds/kkobak-03272dcd-2cc4-4cad-9c3a-200ab4a4bcc0/_ds_bundle.js"></script>
+  <style>
+    /* 안정적인 별칭 → HKDS 해시 토큰. 라이트 테마는 해시 토큰을 덮어써 DS 컴포넌트까지 함께 전환됨 */
+    :root {
+      --k-bg: var(--_1ukhvxl0); --k-surface: var(--_1ukhvxl1); --k-surface-hover: var(--_1ukhvxl2);
+      --k-text: var(--_1ukhvxl3); --k-muted: var(--_1ukhvxl4);
+      --k-border: var(--_1ukhvxl5); --k-border-strong: var(--_1ukhvxl6);
+      --k-accent: var(--_1ukhvxl7); --k-accent-text: var(--_1ukhvxla); --k-accent2: var(--_1ukhvxlb);
+      --k-danger: var(--_1ukhvxle); --k-success: var(--_1ukhvxlg); --k-warning: var(--_1ukhvxlh);
+      --k-shadow-sm: var(--_1ukhvxl1a); --k-shadow-md: var(--_1ukhvxl1b);
+      --k-shadow-lg: var(--_1ukhvxl1c); --k-shadow-glow: var(--_1ukhvxl1d);
+    }
+    [data-theme="light"] {
+      --_1ukhvxl0: #F2F4F7; --_1ukhvxl1: #FBFCFD; --_1ukhvxl2: #E8EBF1;
+      --_1ukhvxl3: #191D28; --_1ukhvxl4: #5C6478;
+      --_1ukhvxl5: #DBDFE8; --_1ukhvxl6: #B5BCCA;
+      --_1ukhvxl7: #18766D; --_1ukhvxl8: #1E8B81; --_1ukhvxl9: #125E58; --_1ukhvxla: #FFFFFF;
+      --_1ukhvxlb: #594F98; --_1ukhvxlc: #6A60AC; --_1ukhvxld: #FFFFFF;
+      --_1ukhvxle: #A8414D; --_1ukhvxlf: #FFFFFF;
+      --_1ukhvxlg: #327256; --_1ukhvxlh: #87641A; --_1ukhvxli: #18766D;
+      --_1ukhvxlj: rgba(25, 29, 40, .4);
+      --_1ukhvxl1a: 0 1px 2px rgba(25, 29, 40, .07);
+      --_1ukhvxl1b: 0 4px 12px rgba(25, 29, 40, .09);
+      --_1ukhvxl1c: 0 12px 32px rgba(25, 29, 40, .13);
+      --_1ukhvxl1d: 0 0 0 1px rgba(24, 118, 109, .40), 0 0 18px rgba(24, 118, 109, .14);
+    }
+    body { margin: 0; background: var(--k-bg); color: var(--k-text); font-family: "Space Grotesk", system-ui, sans-serif; }
+    a { color: var(--k-accent); text-decoration: none; }
+    a:hover { color: var(--k-accent2); }
+  </style>
+</helmet>
+<div data-theme="{{ theme }}" style="background: var(--k-bg); color: var(--k-text); min-height: 100vh; transition: background 160ms linear, color 160ms linear">
+<div style="max-width: 1080px; margin: 0 auto; padding: 48px 32px 64px; display: flex; flex-direction: column; gap: 48px">
+  <header style="display: flex; flex-direction: column; gap: 12px">
+    <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap">
+      <span style="font-size: 12px; font-weight: 700; letter-spacing: 2px; color: var(--k-accent-text); background: var(--k-accent); padding: 4px 10px; border-radius: 9999px">KKOBAK</span>
+      <span style="font-size: 12px; color: var(--k-muted); font-family: 'JetBrains Mono', monospace">hk-design-system@0.1.0 · HKDS</span>
+      <div style="flex: 1"></div>
+      <div style="display: flex; align-items: center; gap: 8px">
+        <span style="font-size: 12px; color: var(--k-muted)">테마</span>
+        <x-import component-from-global-scope="HKDS.Button" size="sm" variant="{{ darkVariant }}" onClick="{{ setDark }}" hint-size="auto,32px">다크</x-import>
+        <x-import component-from-global-scope="HKDS.Button" size="sm" variant="{{ lightVariant }}" onClick="{{ setLight }}" hint-size="auto,32px">라이트</x-import>
+      </div>
+    </div>
+    <h1 style="margin: 0; font-size: 32px; font-weight: 700">디자인 시스템 개요</h1>
+    <p style="margin: 0; color: var(--k-muted); font-size: 16px; max-width: 640px; text-wrap: pretty">이 프로젝트에 바인딩된 KKOBAK(HKDS)의 컬러·타이포그래피·간격·컴포넌트 정보입니다. 원본은 다크 전용이며, 라이트 테마는 동일한 토큰 이름 위에 밝은 값을 덮어써 DS 컴포넌트까지 함께 전환됩니다.</p>
+  </header>
+
+  <section style="display: flex; flex-direction: column; gap: 16px">
+    <h2 style="margin: 0; font-size: 24px; font-weight: 700">컬러 토큰 <span style="font-size: 14px; color: var(--k-muted); font-weight: 400">vars.color.* · 다크 / 라이트</span></h2>
+    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px">
+      <div style="background: var(--k-surface); border: 1px solid var(--k-border); border-radius: 10px; overflow: hidden">
+        <div style="height: 56px; background: var(--_1ukhvxl0); border-bottom: 1px solid var(--k-border)"></div>
+        <div style="padding: 10px 12px; display: flex; flex-direction: column; gap: 2px">
+          <span style="font-size: 13px; font-weight: 500">bg</span>
+          <span style="font-size: 11px; color: var(--k-muted); font-family: 'JetBrains Mono', monospace">#0B0E1A / #F2F4F7</span>
+        </div>
+      </div>
+      <div style="background: var(--k-surface); border: 1px solid var(--k-border); border-radius: 10px; overflow: hidden">
+        <div style="height: 56px; background: var(--_1ukhvxl1); border-bottom: 1px solid var(--k-border)"></div>
+        <div style="padding: 10px 12px; display: flex; flex-direction: column; gap: 2px">
+          <span style="font-size: 13px; font-weight: 500">surface</span>
+          <span style="font-size: 11px; color: var(--k-muted); font-family: 'JetBrains Mono', monospace">#141A2E / #FBFCFD</span>
+        </div>
+      </div>
+      <div style="background: var(--k-surface); border: 1px solid var(--k-border); border-radius: 10px; overflow: hidden">
+        <div style="height: 56px; background: var(--_1ukhvxl2); border-bottom: 1px solid var(--k-border)"></div>
+        <div style="padding: 10px 12px; display: flex; flex-direction: column; gap: 2px">
+          <span style="font-size: 13px; font-weight: 500">surfaceHover</span>
+          <span style="font-size: 11px; color: var(--k-muted); font-family: 'JetBrains Mono', monospace">#1C2440 / #E8EBF1</span>
+        </div>
+      </div>
+      <div style="background: var(--k-surface); border: 1px solid var(--k-border); border-radius: 10px; overflow: hidden">
+        <div style="height: 56px; background: var(--_1ukhvxl3); border-bottom: 1px solid var(--k-border)"></div>
+        <div style="padding: 10px 12px; display: flex; flex-direction: column; gap: 2px">
+          <span style="font-size: 13px; font-weight: 500">text</span>
+          <span style="font-size: 11px; color: var(--k-muted); font-family: 'JetBrains Mono', monospace">#E6ECFF / #191D28</span>
+        </div>
+      </div>
+      <div style="background: var(--k-surface); border: 1px solid var(--k-border); border-radius: 10px; overflow: hidden">
+        <div style="height: 56px; background: var(--_1ukhvxl4); border-bottom: 1px solid var(--k-border)"></div>
+        <div style="padding: 10px 12px; display: flex; flex-direction: column; gap: 2px">
+          <span style="font-size: 13px; font-weight: 500">textMuted</span>
+          <span style="font-size: 11px; color: var(--k-muted); font-family: 'JetBrains Mono', monospace">#9AA7C7 / #5C6478</span>
+        </div>
+      </div>
+      <div style="background: var(--k-surface); border: 1px solid var(--k-border); border-radius: 10px; overflow: hidden">
+        <div style="height: 56px; background: var(--_1ukhvxl5); border-bottom: 1px solid var(--k-border)"></div>
+        <div style="padding: 10px 12px; display: flex; flex-direction: column; gap: 2px">
+          <span style="font-size: 13px; font-weight: 500">border</span>
+          <span style="font-size: 11px; color: var(--k-muted); font-family: 'JetBrains Mono', monospace">#24304F / #DBDFE8</span>
+        </div>
+      </div>
+      <div style="background: var(--k-surface); border: 1px solid var(--k-border); border-radius: 10px; overflow: hidden">
+        <div style="height: 56px; background: var(--_1ukhvxl6); border-bottom: 1px solid var(--k-border)"></div>
+        <div style="padding: 10px 12px; display: flex; flex-direction: column; gap: 2px">
+          <span style="font-size: 13px; font-weight: 500">borderStrong</span>
+          <span style="font-size: 11px; color: var(--k-muted); font-family: 'JetBrains Mono', monospace">#33436E / #B5BCCA</span>
+        </div>
+      </div>
+      <div style="background: var(--k-surface); border: 1px solid var(--k-border); border-radius: 10px; overflow: hidden">
+        <div style="height: 56px; background: var(--_1ukhvxl7); border-bottom: 1px solid var(--k-border)"></div>
+        <div style="padding: 10px 12px; display: flex; flex-direction: column; gap: 2px">
+          <span style="font-size: 13px; font-weight: 500">accent</span>
+          <span style="font-size: 11px; color: var(--k-muted); font-family: 'JetBrains Mono', monospace">#00E5D0 / #18766D</span>
+        </div>
+      </div>
+      <div style="background: var(--k-surface); border: 1px solid var(--k-border); border-radius: 10px; overflow: hidden">
+        <div style="height: 56px; background: var(--_1ukhvxl8); border-bottom: 1px solid var(--k-border)"></div>
+        <div style="padding: 10px 12px; display: flex; flex-direction: column; gap: 2px">
+          <span style="font-size: 13px; font-weight: 500">accentHover</span>
+          <span style="font-size: 11px; color: var(--k-muted); font-family: 'JetBrains Mono', monospace">#25EFDD / #1E8B81</span>
+        </div>
+      </div>
+      <div style="background: var(--k-surface); border: 1px solid var(--k-border); border-radius: 10px; overflow: hidden">
+        <div style="height: 56px; background: var(--_1ukhvxl9); border-bottom: 1px solid var(--k-border)"></div>
+        <div style="padding: 10px 12px; display: flex; flex-direction: column; gap: 2px">
+          <span style="font-size: 13px; font-weight: 500">accentActive</span>
+          <span style="font-size: 11px; color: var(--k-muted); font-family: 'JetBrains Mono', monospace">#00C4B4 / #125E58</span>
+        </div>
+      </div>
+      <div style="background: var(--k-surface); border: 1px solid var(--k-border); border-radius: 10px; overflow: hidden">
+        <div style="height: 56px; background: var(--_1ukhvxlb); border-bottom: 1px solid var(--k-border)"></div>
+        <div style="padding: 10px 12px; display: flex; flex-direction: column; gap: 2px">
+          <span style="font-size: 13px; font-weight: 500">accent2</span>
+          <span style="font-size: 11px; color: var(--k-muted); font-family: 'JetBrains Mono', monospace">#7C5CFF / #594F98</span>
+        </div>
+      </div>
+      <div style="background: var(--k-surface); border: 1px solid var(--k-border); border-radius: 10px; overflow: hidden">
+        <div style="height: 56px; background: var(--_1ukhvxlc); border-bottom: 1px solid var(--k-border)"></div>
+        <div style="padding: 10px 12px; display: flex; flex-direction: column; gap: 2px">
+          <span style="font-size: 13px; font-weight: 500">accent2Hover</span>
+          <span style="font-size: 11px; color: var(--k-muted); font-family: 'JetBrains Mono', monospace">#957BFF / #6A60AC</span>
+        </div>
+      </div>
+      <div style="background: var(--k-surface); border: 1px solid var(--k-border); border-radius: 10px; overflow: hidden">
+        <div style="height: 56px; background: var(--_1ukhvxle); border-bottom: 1px solid var(--k-border)"></div>
+        <div style="padding: 10px 12px; display: flex; flex-direction: column; gap: 2px">
+          <span style="font-size: 13px; font-weight: 500">danger</span>
+          <span style="font-size: 11px; color: var(--k-muted); font-family: 'JetBrains Mono', monospace">#FF5A6E / #A8414D</span>
+        </div>
+      </div>
+      <div style="background: var(--k-surface); border: 1px solid var(--k-border); border-radius: 10px; overflow: hidden">
+        <div style="height: 56px; background: var(--_1ukhvxlg); border-bottom: 1px solid var(--k-border)"></div>
+        <div style="padding: 10px 12px; display: flex; flex-direction: column; gap: 2px">
+          <span style="font-size: 13px; font-weight: 500">success</span>
+          <span style="font-size: 11px; color: var(--k-muted); font-family: 'JetBrains Mono', monospace">#3DE1A0 / #327256</span>
+        </div>
+      </div>
+      <div style="background: var(--k-surface); border: 1px solid var(--k-border); border-radius: 10px; overflow: hidden">
+        <div style="height: 56px; background: var(--_1ukhvxlh); border-bottom: 1px solid var(--k-border)"></div>
+        <div style="padding: 10px 12px; display: flex; flex-direction: column; gap: 2px">
+          <span style="font-size: 13px; font-weight: 500">warning</span>
+          <span style="font-size: 11px; color: var(--k-muted); font-family: 'JetBrains Mono', monospace">#FFC24B / #87641A</span>
+        </div>
+      </div>
+      <div style="background: var(--k-surface); border: 1px solid var(--k-border); border-radius: 10px; overflow: hidden">
+        <div style="height: 56px; background: var(--_1ukhvxli); border-bottom: 1px solid var(--k-border)"></div>
+        <div style="padding: 10px 12px; display: flex; flex-direction: column; gap: 2px">
+          <span style="font-size: 13px; font-weight: 500">focusRing</span>
+          <span style="font-size: 11px; color: var(--k-muted); font-family: 'JetBrains Mono', monospace">#00E5D0 / #18766D</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section style="display: flex; flex-direction: column; gap: 16px">
+    <h2 style="margin: 0; font-size: 24px; font-weight: 700">타이포그래피 <span style="font-size: 14px; color: var(--k-muted); font-weight: 400">두 테마 공통</span></h2>
+    <div style="background: var(--k-surface); border: 1px solid var(--k-border); border-radius: 16px; padding: 24px; display: flex; flex-direction: column; gap: 16px">
+      <div style="display: flex; align-items: baseline; gap: 16px"><span style="width: 132px; font-size: 12px; color: var(--k-muted); font-family: 'JetBrains Mono', monospace; flex-shrink: 0">font.body</span><span style="font-size: 20px">Space Grotesk — 본문·헤딩 공용</span></div>
+      <div style="display: flex; align-items: baseline; gap: 16px"><span style="width: 132px; font-size: 12px; color: var(--k-muted); font-family: 'JetBrains Mono', monospace; flex-shrink: 0">font.mono</span><span style="font-size: 18px; font-family: 'JetBrains Mono', monospace">JetBrains Mono — 코드·수치</span></div>
+      <div style="height: 1px; background: var(--k-border)"></div>
+      <div style="display: flex; align-items: baseline; gap: 16px"><span style="width: 132px; font-size: 12px; color: var(--k-muted); font-family: 'JetBrains Mono', monospace; flex-shrink: 0">xs · 12px</span><span style="font-size: 12px">가나다라 ABC 123</span></div>
+      <div style="display: flex; align-items: baseline; gap: 16px"><span style="width: 132px; font-size: 12px; color: var(--k-muted); font-family: 'JetBrains Mono', monospace; flex-shrink: 0">sm · 14px</span><span style="font-size: 14px">가나다라 ABC 123</span></div>
+      <div style="display: flex; align-items: baseline; gap: 16px"><span style="width: 132px; font-size: 12px; color: var(--k-muted); font-family: 'JetBrains Mono', monospace; flex-shrink: 0">md · 16px</span><span style="font-size: 16px">가나다라 ABC 123</span></div>
+      <div style="display: flex; align-items: baseline; gap: 16px"><span style="width: 132px; font-size: 12px; color: var(--k-muted); font-family: 'JetBrains Mono', monospace; flex-shrink: 0">lg · 18px</span><span style="font-size: 18px; font-weight: 500">가나다라 ABC 123</span></div>
+      <div style="display: flex; align-items: baseline; gap: 16px"><span style="width: 132px; font-size: 12px; color: var(--k-muted); font-family: 'JetBrains Mono', monospace; flex-shrink: 0">xl · 24px</span><span style="font-size: 24px; font-weight: 700">가나다라 ABC 123</span></div>
+      <div style="display: flex; align-items: baseline; gap: 16px"><span style="width: 132px; font-size: 12px; color: var(--k-muted); font-family: 'JetBrains Mono', monospace; flex-shrink: 0">xxl · 32px</span><span style="font-size: 32px; font-weight: 700">가나다라 ABC</span></div>
+      <div style="height: 1px; background: var(--k-border)"></div>
+      <div style="display: flex; gap: 32px; flex-wrap: wrap">
+        <span style="font-weight: 400">regular 400</span><span style="font-weight: 500">medium 500</span><span style="font-weight: 700">bold 700</span>
+      </div>
+    </div>
+  </section>
+
+  <section style="display: flex; flex-direction: column; gap: 16px">
+    <h2 style="margin: 0; font-size: 24px; font-weight: 700">간격 · 라운드 · 그림자</h2>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 12px">
+      <div style="background: var(--k-surface); border: 1px solid var(--k-border); border-radius: 16px; padding: 24px; display: flex; flex-direction: column; gap: 12px">
+        <span style="font-size: 14px; font-weight: 700; color: var(--k-muted)">space (4→48px)</span>
+        <div style="display: flex; align-items: center; gap: 12px"><span style="width: 72px; font-size: 12px; color: var(--k-muted); font-family: 'JetBrains Mono', monospace">xs 4px</span><div style="height: 12px; width: 4px; background: var(--k-accent); border-radius: 2px"></div></div>
+        <div style="display: flex; align-items: center; gap: 12px"><span style="width: 72px; font-size: 12px; color: var(--k-muted); font-family: 'JetBrains Mono', monospace">sm 8px</span><div style="height: 12px; width: 8px; background: var(--k-accent); border-radius: 2px"></div></div>
+        <div style="display: flex; align-items: center; gap: 12px"><span style="width: 72px; font-size: 12px; color: var(--k-muted); font-family: 'JetBrains Mono', monospace">md 12px</span><div style="height: 12px; width: 12px; background: var(--k-accent); border-radius: 2px"></div></div>
+        <div style="display: flex; align-items: center; gap: 12px"><span style="width: 72px; font-size: 12px; color: var(--k-muted); font-family: 'JetBrains Mono', monospace">lg 16px</span><div style="height: 12px; width: 16px; background: var(--k-accent); border-radius: 2px"></div></div>
+        <div style="display: flex; align-items: center; gap: 12px"><span style="width: 72px; font-size: 12px; color: var(--k-muted); font-family: 'JetBrains Mono', monospace">xl 24px</span><div style="height: 12px; width: 24px; background: var(--k-accent); border-radius: 2px"></div></div>
+        <div style="display: flex; align-items: center; gap: 12px"><span style="width: 72px; font-size: 12px; color: var(--k-muted); font-family: 'JetBrains Mono', monospace">xxl 32px</span><div style="height: 12px; width: 32px; background: var(--k-accent); border-radius: 2px"></div></div>
+        <div style="display: flex; align-items: center; gap: 12px"><span style="width: 72px; font-size: 12px; color: var(--k-muted); font-family: 'JetBrains Mono', monospace">xxxl 48px</span><div style="height: 12px; width: 48px; background: var(--k-accent); border-radius: 2px"></div></div>
+      </div>
+      <div style="background: var(--k-surface); border: 1px solid var(--k-border); border-radius: 16px; padding: 24px; display: flex; flex-direction: column; gap: 12px">
+        <span style="font-size: 14px; font-weight: 700; color: var(--k-muted)">radius</span>
+        <div style="display: flex; gap: 12px; flex-wrap: wrap">
+          <div style="display: flex; flex-direction: column; align-items: center; gap: 6px"><div style="width: 56px; height: 56px; background: var(--k-surface-hover); border: 1px solid var(--k-border-strong); border-radius: 6px"></div><span style="font-size: 12px; color: var(--k-muted); font-family: 'JetBrains Mono', monospace">sm 6</span></div>
+          <div style="display: flex; flex-direction: column; align-items: center; gap: 6px"><div style="width: 56px; height: 56px; background: var(--k-surface-hover); border: 1px solid var(--k-border-strong); border-radius: 10px"></div><span style="font-size: 12px; color: var(--k-muted); font-family: 'JetBrains Mono', monospace">md 10</span></div>
+          <div style="display: flex; flex-direction: column; align-items: center; gap: 6px"><div style="width: 56px; height: 56px; background: var(--k-surface-hover); border: 1px solid var(--k-border-strong); border-radius: 16px"></div><span style="font-size: 12px; color: var(--k-muted); font-family: 'JetBrains Mono', monospace">lg 16</span></div>
+          <div style="display: flex; flex-direction: column; align-items: center; gap: 6px"><div style="width: 56px; height: 56px; background: var(--k-surface-hover); border: 1px solid var(--k-border-strong); border-radius: 9999px"></div><span style="font-size: 12px; color: var(--k-muted); font-family: 'JetBrains Mono', monospace">full</span></div>
+        </div>
+        <span style="font-size: 14px; font-weight: 700; color: var(--k-muted); margin-top: 8px">shadow <span style="font-weight: 400">— 테마별로 값이 다름</span></span>
+        <div style="display: flex; gap: 16px; flex-wrap: wrap">
+          <div style="width: 72px; height: 48px; background: var(--k-surface); border: 1px solid var(--k-border); border-radius: 10px; box-shadow: var(--k-shadow-sm); display: flex; align-items: center; justify-content: center; font-size: 12px; color: var(--k-muted)">sm</div>
+          <div style="width: 72px; height: 48px; background: var(--k-surface); border: 1px solid var(--k-border); border-radius: 10px; box-shadow: var(--k-shadow-md); display: flex; align-items: center; justify-content: center; font-size: 12px; color: var(--k-muted)">md</div>
+          <div style="width: 72px; height: 48px; background: var(--k-surface); border: 1px solid var(--k-border); border-radius: 10px; box-shadow: var(--k-shadow-lg); display: flex; align-items: center; justify-content: center; font-size: 12px; color: var(--k-muted)">lg</div>
+          <div style="width: 72px; height: 48px; background: var(--k-surface); border: 1px solid var(--k-border); border-radius: 10px; box-shadow: var(--k-shadow-glow); display: flex; align-items: center; justify-content: center; font-size: 12px; color: var(--k-muted)">glow</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section style="display: flex; flex-direction: column; gap: 16px">
+    <h2 style="margin: 0; font-size: 24px; font-weight: 700">컴포넌트 <span style="font-size: 14px; color: var(--k-muted); font-weight: 400">전체 9종 · 현재 테마로 라이브 렌더링</span></h2>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 12px">
+      <div style="background: var(--k-surface); border: 1px solid var(--k-border); border-radius: 16px; padding: 24px; display: flex; flex-direction: column; gap: 12px">
+        <span style="font-size: 16px; font-weight: 700">Button</span>
+        <span style="font-size: 13px; color: var(--k-muted)">variant: primary / secondary / ghost / danger · size: sm / md / lg</span>
+        <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center">
+          <x-import component-from-global-scope="HKDS.Button" variant="primary" hint-size="auto,40px">Primary</x-import>
+          <x-import component-from-global-scope="HKDS.Button" variant="secondary" hint-size="auto,40px">Secondary</x-import>
+          <x-import component-from-global-scope="HKDS.Button" variant="ghost" hint-size="auto,40px">Ghost</x-import>
+          <x-import component-from-global-scope="HKDS.Button" variant="danger" hint-size="auto,40px">Danger</x-import>
+        </div>
+      </div>
+      <div style="background: var(--k-surface); border: 1px solid var(--k-border); border-radius: 16px; padding: 24px; display: flex; flex-direction: column; gap: 12px">
+        <span style="font-size: 16px; font-weight: 700">Badge</span>
+        <span style="font-size: 13px; color: var(--k-muted)">tone: neutral / accent / violet / success / warning / danger</span>
+        <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center">
+          <x-import component-from-global-scope="HKDS.Badge" tone="neutral" hint-size="auto,24px">neutral</x-import>
+          <x-import component-from-global-scope="HKDS.Badge" tone="accent" hint-size="auto,24px">accent</x-import>
+          <x-import component-from-global-scope="HKDS.Badge" tone="violet" hint-size="auto,24px">violet</x-import>
+          <x-import component-from-global-scope="HKDS.Badge" tone="success" hint-size="auto,24px">success</x-import>
+          <x-import component-from-global-scope="HKDS.Badge" tone="warning" hint-size="auto,24px">warning</x-import>
+          <x-import component-from-global-scope="HKDS.Badge" tone="danger" hint-size="auto,24px">danger</x-import>
+        </div>
+      </div>
+      <div style="background: var(--k-surface); border: 1px solid var(--k-border); border-radius: 16px; padding: 24px; display: flex; flex-direction: column; gap: 12px">
+        <span style="font-size: 16px; font-weight: 700">Input · Select · Checkbox</span>
+        <span style="font-size: 13px; color: var(--k-muted)">네이티브 폼 요소 기반 · invalid 상태 지원</span>
+        <x-import component-from-global-scope="HKDS.Input" placeholder="이름을 입력하세요" hint-size="100%,40px"></x-import>
+        <x-import component-from-global-scope="HKDS.Checkbox" label="약관에 동의합니다" hint-size="auto,24px"></x-import>
+      </div>
+      <div style="background: var(--k-surface); border: 1px solid var(--k-border); border-radius: 16px; padding: 24px; display: flex; flex-direction: column; gap: 12px">
+        <span style="font-size: 16px; font-weight: 700">Card · Text · Stack · Dialog</span>
+        <span style="font-size: 13px; color: var(--k-muted)">Card: padding·interactive / Text: size·weight·tone / Stack: flexbox 프리미티브 / Dialog: 네이티브 dialog 기반 모달</span>
+        <x-import component-from-global-scope="HKDS.Card" padding="md" hint-size="100%,80px">
+          <x-import component-from-global-scope="HKDS.Text" size="lg" weight="bold" hint-size="auto,24px">Card 안의 Text</x-import>
+          <x-import component-from-global-scope="HKDS.Text" tone="muted" hint-size="auto,20px">tone="muted" 보조 텍스트</x-import>
+        </x-import>
+      </div>
+    </div>
+  </section>
+
+  <section style="background: var(--k-surface); border: 1px solid var(--k-border); border-radius: 16px; padding: 24px; display: flex; flex-direction: column; gap: 8px">
+    <span style="font-size: 16px; font-weight: 700">사용 규칙 요약</span>
+    <ul style="margin: 0; padding-left: 20px; color: var(--k-muted); font-size: 14px; line-height: 1.7">
+      <li>HKDS 원본은 다크 전용 — ThemeProvider가 감싼 영역에 <code style="font-family: 'JetBrains Mono', monospace">data-theme="light"</code>를 걸면 같은 토큰 위에 밝은 값이 덮여 라이트로 전환됩니다.</li>
+      <li>유틸리티 클래스 없음 — 스타일은 컴포넌트 props와 vars 토큰으로만</li>
+      <li>CSS 변수명은 해시되어 불안정 — 코드에서는 window.HKDS.vars 로 참조</li>
+      <li>포인트 컬러 2종: accent(teal) · accent2(violet) — 라이트에서는 채도를 낮추고 명도를 내려 조정</li>
+    </ul>
+  </section>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;theme&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;dark&quot;,&quot;light&quot;],&quot;default&quot;:&quot;dark&quot;,&quot;tsType&quot;:&quot;\&quot;dark\&quot; | \&quot;light\&quot;&quot;,&quot;section&quot;:&quot;테마&quot;}}">
+class Component extends DCLogic {
+  state = { theme: null };
+  componentDidMount() {
+    let saved = null;
+    try { saved = localStorage.getItem("kkobak-ds-theme"); } catch (e) {}
+    this.setState({ theme: saved === "light" || saved === "dark" ? saved : (this.props.theme || "dark") });
+  }
+  set(theme) {
+    try { localStorage.setItem("kkobak-ds-theme", theme); } catch (e) {}
+    this.setState({ theme });
+  }
+  renderVals() {
+    const theme = this.state.theme || this.props.theme || "dark";
+    return {
+      theme,
+      darkVariant: theme === "dark" ? "primary" : "ghost",
+      lightVariant: theme === "light" ? "primary" : "ghost",
+      setDark: () => this.set("dark"),
+      setLight: () => this.set("light"),
+    };
+  }
+}
+</script>
+</body>
+</html>
